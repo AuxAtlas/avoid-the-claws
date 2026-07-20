@@ -1,8 +1,7 @@
 using System.Collections.Immutable;
-using System.ComponentModel;
 using AvoidClaws.code.dotnet.Buffs;
+using AvoidClaws.code.dotnet.Components;
 using AvoidClaws.code.dotnet.Networking.Data;
-using AvoidClaws.code.dotnet.Resources;
 using Godot;
 
 namespace AvoidClaws.code.dotnet.Actors;
@@ -28,13 +27,10 @@ public interface IActor : IKableObject
 
     public void HandleNetTick(uint tick);
 
-    public IBuff? CreateAndApplyBuff(GameResources.BuffType buffType, KableId? presetKableId = null);
+    public void ApplyBuff(IBuff buff);
     public void RemoveBuff(IBuff buff);
     public ImmutableArray<IBuff> GetBuffs();
-
-    public void TakeDamage(float amount, IKableObject? source);
-    public void TakeHeal(float amount, IKableObject? source);
-    public void Kill(IKableObject? source);
+    public void Destroy(IKableObject? source);
 
     public void TeleportTo(Vector3 position, Vector3? rotation = null);
     public void Respawn();
