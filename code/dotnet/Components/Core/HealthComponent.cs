@@ -6,8 +6,7 @@ namespace AvoidClaws.code.dotnet.Components.Core;
 
 public partial class HealthComponent : Node, IComponent
 {
-    [Export]
-    private float _maxHealth = 100;
+    [Export] private float _maxHealth = 100;
 
     [Signal]
     public delegate void HealthChangedEventHandler(HealthUpdateInfo healthUpdateInfo);
@@ -26,10 +25,7 @@ public partial class HealthComponent : Node, IComponent
         private set
         {
             _maxHealth = value;
-            if (CurrentHealth > _maxHealth)
-            {
-                CurrentHealth = _maxHealth;
-            }
+            if (CurrentHealth > _maxHealth) CurrentHealth = _maxHealth;
         }
     }
 
@@ -48,26 +44,23 @@ public partial class HealthComponent : Node, IComponent
         ParentActor = GetParent()?.GetParentOrNull<IActor>();
         Revive();
     }
+
     public void ReadStateFrom(ObjectState state)
     {
-        float oldHealth = CurrentHealth;
+        var oldHealth = CurrentHealth;
         CurrentHealth = state.ReadFloat();
 
         MaxHealth = state.ReadFloat();
 
-        bool oldIsDead = IsDead;
+        var oldIsDead = IsDead;
         IsDead = state.ReadByte() == 1;
 
         if (oldIsDead != IsDead)
         {
             if (IsDead)
-            {
                 Die();
-            }
             else
-            {
                 Revive();
-            }
         }
         else if (!Mathf.IsEqualApprox(oldHealth, CurrentHealth))
         {
@@ -81,6 +74,7 @@ public partial class HealthComponent : Node, IComponent
             EmitSignalHealthChanged(info);
         }
     }
+
     public void WriteStateTo(ObjectState state)
     {
         state.Put(CurrentHealth);
@@ -90,7 +84,7 @@ public partial class HealthComponent : Node, IComponent
 
     public void TakeDamage(float amount, bool suppressSoundEffect = false)
     {
-        float oldHealth = CurrentHealth;
+        var oldHealth = CurrentHealth;
         if (amount > 0f)
             CurrentHealth -= amount;
 
@@ -105,15 +99,12 @@ public partial class HealthComponent : Node, IComponent
             SuppressSoundEffect = suppressSoundEffect
         };
         EmitSignalHealthChanged(info);
-        if (!IsDead && !HasHealthRemaining)
-        {
-            Die();
-        }
+        if (!IsDead && !HasHealthRemaining) Die();
     }
 
     public void TakeHeal(float amount, bool suppressSoundEffect = false)
     {
-        float oldHealth = CurrentHealth;
+        var oldHealth = CurrentHealth;
         if (amount > 0f)
             CurrentHealth += amount;
 
@@ -129,10 +120,7 @@ public partial class HealthComponent : Node, IComponent
         };
 
         EmitSignalHealthChanged(info);
-        if (!IsDead && !HasHealthRemaining)
-        {
-            Die();
-        }
+        if (!IsDead && !HasHealthRemaining) Die();
     }
 
     public void Die()

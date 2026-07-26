@@ -38,14 +38,6 @@ public partial class GameWorld : Node, IService
 
     public Random Random { get; private set; }
 
-    public void Setup()
-    {
-    }
-
-    public void TearDown()
-    {
-    }
-
     public override void _Ready()
     {
         ChangeMapTo(Core.Resources.ScreenPrefabs.MainMenuScreen);

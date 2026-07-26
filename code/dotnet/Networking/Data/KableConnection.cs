@@ -4,10 +4,10 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Data;
 
-public class KableConnection(NetPeer netPeer, KableId kableId) : IKableObject
+public class KableConnection(NetPeer? netPeer, KableId kableId) : IKableObject
 {
     public int LastLatency { get; internal set; } = 0;
-    public NetPeer NetPeer { get; } = netPeer;
+    public NetPeer? NetPeer { get; } = netPeer;
     public KableId KableId { get; } = kableId;
     public KableConnectionId AuthorityConnectionId => ConnectionId;
     public KableConnectionId ConnectionId { get; private set; } = new(kableId.Id);
@@ -57,6 +57,6 @@ public class KableConnection(NetPeer netPeer, KableId kableId) : IKableObject
 
     public void SendPacket(NetDataWriter writer, DeliveryMethod deliveryMethod)
     {
-        NetPeer.Send(writer, deliveryMethod);
+        NetPeer?.Send(writer, deliveryMethod);
     }
 }

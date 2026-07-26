@@ -11,52 +11,29 @@ namespace AvoidClaws.code.dotnet.Resources;
 
 public partial class GameResources : Node, IService
 {
+    [Export]
+    public Control LoadingScreenHandle { get; private set; } = null!;
+
     public ActorPrefabs ActorPrefabs { get; private set; } = null!;
     public ControllerPrefabs ControllerPrefabs { get; private set; } = null!;
     public PickupPrefabs PickupPrefabs { get; private set; } = null!;
-    public LevelPrefabs LevelPrefabs { get; private set; } = null!;
+    public LevelPrefabs MapPrefabs { get; private set; } = null!;
     public ScreenPrefabs ScreenPrefabs { get; private set; } = null!;
 
+    private readonly Dictionary<CoreGame.ActorType, Tuple<Type, PackedScene>> _actorRegistry = new();
+    private readonly Dictionary<CoreGame.ControllerType, Tuple<Type, PackedScene>> _controllerRegistry = new();
+    private readonly Dictionary<CoreGame.BuffType, Tuple<Type, PackedScene>> _buffRegistry = new();
 
     public override void _Ready()
     {
-        // Register<ShipActor>(ActorType.Ship, PlayerBoatActorPrefab);
-        //
-        // Register<HealthPickupActor>(ActorType.HealthPickup, HealthPickupPrefab);
-        //
-        // Register<DummyController>(ControllerType.Dummy, DummyControllerPrefab);
-        // Register<PlayerController>(ControllerType.LocalPlayer, PlayerControllerPrefab);
         ActorPrefabs = (ActorPrefabs)FindChild("ActorPrefabs");
         ControllerPrefabs = (ControllerPrefabs)FindChild("ControllerPrefabs");
         PickupPrefabs = (PickupPrefabs)FindChild("PickupPrefabs");
-        LevelPrefabs = (LevelPrefabs)FindChild("LevelPrefabs");
+        MapPrefabs = (LevelPrefabs)FindChild("LevelPrefabs");
         ScreenPrefabs = (ScreenPrefabs)FindChild("ScreenPrefabs");
     }
 
-    public enum ActorType : byte
-    {
-        Ship,
-
-        HealthPickup,
-        SpeedPickup
-    }
-
-    public enum ControllerType : byte
-    {
-        Dummy = 1,
-        LocalPlayer = 2
-    }
-
-    public enum BuffType : byte
-    {
-        Speed
-    }
-
-    private readonly Dictionary<ActorType, Tuple<Type, PackedScene>> _actorRegistry = new();
-    private readonly Dictionary<ControllerType, Tuple<Type, PackedScene>> _controllerRegistry = new();
-    private readonly Dictionary<BuffType, Tuple<Type, PackedScene>> _buffRegistry = new();
-
-    private void Register<T>(ActorType type, PackedScene prefab) where T : IActor
+    private void Register<T>(CoreGame.ActorType type, PackedScene prefab) where T : IActor
     {
         if (_actorRegistry.ContainsKey(type))
             return;
@@ -64,7 +41,7 @@ public partial class GameResources : Node, IService
         _actorRegistry.Add(type, Tuple.Create(typeof(T), prefab));
     }
 
-    private void Register<T>(ControllerType type, PackedScene prefab) where T : IController
+    private void Register<T>(CoreGame.ControllerType type, PackedScene prefab) where T : IController
     {
         if (_controllerRegistry.ContainsKey(type))
             return;
@@ -72,7 +49,7 @@ public partial class GameResources : Node, IService
         _controllerRegistry.Add(type, Tuple.Create(typeof(T), prefab));
     }
 
-    private void Register<T>(BuffType type, PackedScene prefab) where T : IBuff
+    private void Register<T>(CoreGame.BuffType type, PackedScene prefab) where T : IBuff
     {
         if (_buffRegistry.ContainsKey(type))
             return;
@@ -80,7 +57,7 @@ public partial class GameResources : Node, IService
         _buffRegistry.Add(type, Tuple.Create(typeof(T), prefab));
     }
 
-    public PackedScene? GetActorPrefab(ActorType type)
+    public PackedScene? GetActorPrefab(CoreGame.ActorType type)
     {
         var result = _actorRegistry.FirstOrDefault(x =>
         {
@@ -93,7 +70,7 @@ public partial class GameResources : Node, IService
         return result.Value.Item2;
     }
 
-    public PackedScene? GetBuffPrefab(BuffType type)
+    public PackedScene? GetBuffPrefab(CoreGame.BuffType type)
     {
         foreach (var pair in _buffRegistry)
             if (Attribute.GetCustomAttribute(pair.Value.Item1, typeof(BuffAttribute)) is BuffAttribute buffAttribute)
@@ -103,7 +80,7 @@ public partial class GameResources : Node, IService
         return null;
     }
 
-    public ActorType GetActorType(IActor input)
+    public CoreGame.ActorType GetActorType(IActor input)
     {
         foreach (var pair in _actorRegistry)
             if (pair.Value.Item1 == input.GetType())
@@ -112,7 +89,7 @@ public partial class GameResources : Node, IService
         throw new InvalidOperationException("Tried to retrieve unregistered actor");
     }
 
-    public ControllerType GetControllerType(IController input)
+    public CoreGame.ControllerType GetControllerType(IController input)
     {
         foreach (var pair in _controllerRegistry)
             if (pair.Value.Item1 == input.GetType())
@@ -121,10 +98,10 @@ public partial class GameResources : Node, IService
         // There are some controllers that don't need to be networked almost at all because they
         // function server-side only. For example: DeathZoneController.
         // To accommodate these just assume any unregistered IController is server-side only and return "Dummy" type.
-        return ControllerType.Dummy;
+        return CoreGame.ControllerType.Dummy;
     }
 
-    public BuffType GetBuffType(IBuff input)
+    public CoreGame.BuffType GetBuffType(IBuff input)
     {
         foreach (var pair in _buffRegistry)
             if (pair.Value.Item1 == input.GetType())
@@ -133,7 +110,7 @@ public partial class GameResources : Node, IService
         throw new InvalidOperationException("Tried to retrieve unregistered buff");
     }
 
-    public BuffType GetBuffType(PackedScene input)
+    public CoreGame.BuffType GetBuffType(PackedScene input)
     {
         foreach (var pair in _buffRegistry)
             if (pair.Value.Item2 == input)

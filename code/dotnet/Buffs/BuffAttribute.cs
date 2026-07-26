@@ -1,10 +1,10 @@
 using System;
-using AvoidClaws.code.dotnet.Resources;
+using AvoidClaws.code.dotnet.Services;
 
 namespace AvoidClaws.code.dotnet.Buffs;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class BuffAttribute(GameResources.BuffType type) : Attribute
+public class BuffAttribute(CoreGame.BuffType type) : Attribute
 {
-    public GameResources.BuffType BuffType { get; } = type;
+    public CoreGame.BuffType BuffType { get; } = type;
 }

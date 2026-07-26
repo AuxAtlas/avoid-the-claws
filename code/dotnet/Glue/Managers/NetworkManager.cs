@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using AvoidClaws.code.dotnet.Actors;
-using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Events.Lifecycle;
 using AvoidClaws.code.dotnet.Events.Networking;
 using AvoidClaws.code.dotnet.Extensions;
@@ -36,7 +34,7 @@ public partial class NetworkManager : Node, IService
     [Export]
     public Label? DebugLabel { get; private set; }
 
-    private readonly List<KableConnection> _toSkipPeersCache = new();
+    private readonly List<KableConnectionId> _toSkipPeersCache = new();
 
     private NetworkState? _lastReceivedNetworkState;
 
@@ -229,19 +227,17 @@ public partial class NetworkManager : Node, IService
         _kablePeers.Remove(foundConnection.ConnectionId);
 
         var foundOwned = Core.World.GetAllOwnedBy(foundConnection);
-        if (foundOwned is null)
+        if (foundOwned.Count == 0)
             return;
 
-        foreach (var kableObject in foundOwned) Core.World.DestroyObject(kableObject.KableId);
+        foreach (var kableObject in foundOwned)
+            Core.World.DestroyObject(kableObject.KableId);
     }
 
     private void HandleNetworkLatencyUpdate(NetPeer peer, int latency)
     {
         var connection = peer.GetKableConnection();
-        if (connection is null)
-            return;
-
-        connection.LastLatency = latency;
+        connection?.LastLatency = latency;
     }
 
     private void HandlePeerConnected(NetPeer peer)
@@ -250,21 +246,22 @@ public partial class NetworkManager : Node, IService
         var connection = new KableConnection(peer, Core.World.GenerateKableId());
         peer.SetKableConnection(connection);
 
-        _kablePeers.Add(connection.ConnectionId, connection);
-
-
-        Core.EventBus.Publish(new NetJoinedEvent
-        {
-            JoinedNetTick = NetworkTick,
-            KableConnection = connection
-        });
-
+        // Only add to list if we are the server. Otherwise, the server will send a 'NetworkInitPacket' shortly, telling us it's ConnectionId.
         if (IsServer)
-            SendToClientReliableUnordered(new NetworkInitPacket
+        {
+            _kablePeers.Add(connection.ConnectionId, connection);
+            SendToClientReliableOrdered(new NetworkInitPacket
             {
-                AssignedConnectionId = connection.ConnectionId!,
+                AssignedConnectionId = connection.ConnectionId,
                 ServerConnectionId = GetServerConnectionId()
             }, connection);
+        }
+
+        Core.EventBus.Publish(new NetPlayerJoinedEvent
+        {
+            JoinedNetTick = NetworkTick,
+            KableConnectionId = connection.ConnectionId
+        });
     }
 
     private void HandleObjectDespawnedEvent(ObjectDespawnedEvent e, KableConnection? source)
@@ -272,7 +269,7 @@ public partial class NetworkManager : Node, IService
         if (IsClient)
             return;
 
-        SendToAllReliableUnordered(new DestroyObjectPacket
+        SendToAllReliableOrdered(new DestroyObjectPacket
         {
             TargetObjectId = e.KableObject.KableId
         });
@@ -346,23 +343,34 @@ public partial class NetworkManager : Node, IService
         IsServer = true;
         _netManager.Start(_serverPort);
 
-        Core.World.ChangeMapTo(Core.Resources.LevelPrefabs.DevEnvMap);
-        MyConnectionId = new KableConnectionId(Core.World.GenerateRawKableId());
-        GD.Print($"Server KableId: {MyConnectionId}");
+        Core.World.ChangeMapTo(Core.Resources.MapPrefabs.DevEnvMap);
+        var kableConnectionId = Core.World.GenerateRawKableId();
+        MyConnectionId = new KableConnectionId();
+        GD.Print($"Server KableConnectionId: {MyConnectionId}");
 
-        var actorNode = Core.World.SpawnPrefab(Core.Resources.ActorPrefabs.PlayerActorPrefab);
-        var controllerNode = Core.World.SpawnPrefab(Core.Resources.ControllerPrefabs.PlayerControllerPrefab);
 
-        if (controllerNode is IController controller)
+        // TODO: The following code spawns the 'local player' for the server when creating a new match. Its far too rigid, so implement a better method for spawning the server's local player when creating a new match.
+        // var actorNode = Core.World.SpawnPrefab(Core.Resources.ActorPrefabs.PlayerActorPrefab);
+        // var controllerNode = Core.World.SpawnPrefab(Core.Resources.ControllerPrefabs.PlayerControllerPrefab);
+        //
+        // if (controllerNode is IController controller)
+        // {
+        //     controller.SetKableAuthority(MyConnectionId);
+        //     if (actorNode is IActor actor)
+        //     {
+        //         actor.SetKableAuthority(MyConnectionId);
+        //         controller.Attach(actor);
+        //         actor.Respawn();
+        //     }
+        // }
+
+        Core.Resources.LoadingScreenHandle.Visible = false;
+
+        Core.EventBus.Publish(new NetPlayerJoinedEvent
         {
-            controller.SetKableAuthority(MyConnectionId);
-            if (actorNode is IActor actor)
-            {
-                actor.SetKableAuthority(MyConnectionId);
-                controller.Attach(actor);
-                actor.Respawn();
-            }
-        }
+            JoinedNetTick = NetworkTick,
+            KableConnectionId = MyConnectionId
+        });
     }
 
 
@@ -377,17 +385,19 @@ public partial class NetworkManager : Node, IService
         return _lastReceivedNetworkState.Value.ServerKableId;
     }
 
-    public KableConnection? GetKableConnectionFromId(KableConnectionId? kableId)
+    public KableConnection? GetKableConnectionFromId(KableConnectionId kableId)
     {
-        if (kableId is null)
-            return null;
-
         return _kablePeers.Values.FirstOrDefault(kablePeer => kablePeer.ConnectionId == kableId);
     }
 
-    internal Dictionary<KableConnectionId, KableConnection> GetKablePeersReference()
+    internal IReadOnlyDictionary<KableConnectionId, KableConnection> GetKablePeersReference()
     {
         return _kablePeers;
+    }
+
+    internal void RegisterKableConnection(KableConnection kableConnection)
+    {
+        _kablePeers.TryAdd(kableConnection.ConnectionId, kableConnection);
     }
 
     private void SendToClient<T>(T packet, KableConnection client, DeliveryMethod deliveryMethod) where T : IGamePacket
@@ -412,7 +422,7 @@ public partial class NetworkManager : Node, IService
         SendToClient<T>(packet, client, DeliveryMethod.ReliableUnordered);
     }
 
-    private void SendToAllConnected<T>(T packet, DeliveryMethod deliveryMethod, List<KableConnection>? connectionsToSkip) where T : IGamePacket
+    private void SendToAllConnected<T>(T packet, DeliveryMethod deliveryMethod, IReadOnlyList<KableConnectionId>? connectionsToSkip) where T : IGamePacket
     {
         _toSkipPeersCache.Clear();
 
@@ -421,20 +431,22 @@ public partial class NetworkManager : Node, IService
 
         _cachedNetWriter.Reset();
         PacketHandlersManager.SerializePacket(_cachedNetWriter, packet);
-        _kablePeers.Values.Except(_toSkipPeersCache).ToList().ForEach(x => x.SendPacket(_cachedNetWriter, deliveryMethod));
+
+        _kablePeers.Where(pair => !_toSkipPeersCache.Contains(pair.Key)).ToList()
+            .ForEach(x => x.Value.SendPacket(_cachedNetWriter, deliveryMethod));
     }
 
-    public void SendToAllUnreliable<T>(T packet, List<KableConnection>? connectionsToSkip = null) where T : IGamePacket
+    public void SendToAllUnreliable<T>(T packet, IReadOnlyList<KableConnectionId>? connectionsToSkip = null) where T : IGamePacket
     {
         SendToAllConnected<T>(packet, DeliveryMethod.Unreliable, connectionsToSkip);
     }
 
-    public void SendToAllReliableOrdered<T>(T packet, List<KableConnection>? connectionsToSkip = null) where T : IGamePacket
+    public void SendToAllReliableOrdered<T>(T packet, IReadOnlyList<KableConnectionId>? connectionsToSkip = null) where T : IGamePacket
     {
         SendToAllConnected<T>(packet, DeliveryMethod.ReliableOrdered, connectionsToSkip);
     }
 
-    public void SendToAllReliableUnordered<T>(T packet, List<KableConnection>? connectionsToSkip = null) where T : IGamePacket
+    public void SendToAllReliableUnordered<T>(T packet, IReadOnlyList<KableConnectionId>? connectionsToSkip = null) where T : IGamePacket
     {
         SendToAllConnected<T>(packet, DeliveryMethod.ReliableUnordered, connectionsToSkip);
     }

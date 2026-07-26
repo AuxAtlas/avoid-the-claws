@@ -2,7 +2,7 @@ using System.Linq;
 using AvoidClaws.code.dotnet.Glue.Misc;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
-using AvoidClaws.code.dotnet.Resources;
+using AvoidClaws.code.dotnet.Services;
 using Godot;
 
 namespace AvoidClaws.code.dotnet.Networking.Handlers.Objects;
@@ -23,7 +23,7 @@ public class SpawnControllerPacketHandler : PacketHandler<SpawnControllerPacket>
         PackedScene? targetPrefab = null;
         switch (packet.Type)
         {
-            case GameResources.ControllerType.LocalPlayer:
+            case CoreGame.ControllerType.LocalPlayer:
                 targetPrefab = Core.Resources.ControllerPrefabs.PlayerControllerPrefab;
                 break;
             default:

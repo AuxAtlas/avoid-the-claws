@@ -11,5 +11,8 @@ public partial class ScreenPrefabs : Node
     public PackedScene? JoinGameScreen { get; private set; }
 
     [Export]
+    public PackedScene? OptionsScreen { get; private set; }
+
+    [Export]
     public PackedScene? LoadingScreen { get; private set; }
 }

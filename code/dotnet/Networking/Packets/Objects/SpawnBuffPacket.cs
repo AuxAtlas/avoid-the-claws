@@ -1,6 +1,6 @@
 using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Networking.Data;
-using AvoidClaws.code.dotnet.Resources;
+using AvoidClaws.code.dotnet.Services;
 using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
@@ -10,7 +10,7 @@ public class SpawnBuffPacket : IGamePacket
     public KableId SpawnedBuffId { get; set; }
     public KableId OwnerActorId { get; set; }
     public KableConnectionId AuthorityConnectionId { get; set; }
-    public GameResources.BuffType BuffType { get; set; }
+    public CoreGame.BuffType BuffType { get; set; }
 
     public void Serialize(NetDataWriter writer)
     {
@@ -25,6 +25,6 @@ public class SpawnBuffPacket : IGamePacket
         SpawnedBuffId = reader.GetKableId();
         OwnerActorId = reader.GetKableId();
         AuthorityConnectionId = reader.GetKableConnectionId();
-        BuffType = (GameResources.BuffType)reader.GetByte();
+        BuffType = (CoreGame.BuffType)reader.GetByte();
     }
 }

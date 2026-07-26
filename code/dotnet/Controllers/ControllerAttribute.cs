@@ -1,10 +1,10 @@
 using System;
-using AvoidClaws.code.dotnet.Resources;
+using AvoidClaws.code.dotnet.Services;
 
 namespace AvoidClaws.code.dotnet.Controllers;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class ControllerAttribute(GameResources.ControllerType controllerType) : Attribute
+public class ControllerAttribute(CoreGame.ControllerType controllerType) : Attribute
 {
-    public GameResources.ControllerType ControllerType { get; } = controllerType;
+    public CoreGame.ControllerType ControllerType { get; } = controllerType;
 }
