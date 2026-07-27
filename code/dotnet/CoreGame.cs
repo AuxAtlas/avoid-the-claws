@@ -1,10 +1,11 @@
 using AvoidClaws.code.dotnet.Events;
 using AvoidClaws.code.dotnet.Glue.Managers;
-using AvoidClaws.code.dotnet.Levels;
 using AvoidClaws.code.dotnet.Resources;
+using AvoidClaws.code.dotnet.Services;
 using Godot;
+using GameWorld = AvoidClaws.code.dotnet.World.GameWorld;
 
-namespace AvoidClaws.code.dotnet.Services;
+namespace AvoidClaws.code.dotnet;
 
 public partial class CoreGame : Node, IService
 {

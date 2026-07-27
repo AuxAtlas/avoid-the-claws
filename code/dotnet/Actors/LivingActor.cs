@@ -39,9 +39,11 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     [Export]
     protected Node3D? BuffsContainer { get; private set; }
 
-    [Export] private int _maxMoveBounces = 4;
+    [Export]
+    private int _maxMoveBounces = 4;
 
-    [Export] private float _respawnTimeSeconds = 5f;
+    [Export]
+    private float _respawnTimeSeconds = 5f;
 
     private float _respawnTimer;
 

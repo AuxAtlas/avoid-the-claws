@@ -7,7 +7,7 @@ using Godot;
 
 namespace AvoidClaws.code.dotnet.Glue.Managers;
 
-public partial class DependencyManager : Node, IService
+public partial class DependencyManager : Node
 {
     private readonly List<object> _injectables = new();
     private readonly List<IService> _services = new();
@@ -69,10 +69,14 @@ public partial class DependencyManager : Node, IService
 
     private void InjectServicesInto(object target)
     {
-        foreach (var field in target.GetType().GetFields(
-                     BindingFlags.Instance
-                     | BindingFlags.NonPublic
-                     | BindingFlags.Public)
+        foreach (var field in target
+                     .GetType()
+                     .GetFields
+                     (
+                         BindingFlags.Instance
+                         | BindingFlags.NonPublic
+                         | BindingFlags.Public
+                     )
                 )
         {
             if (!Attribute.IsDefined(field, typeof(InjectAttribute)))
@@ -82,10 +86,14 @@ public partial class DependencyManager : Node, IService
             field.SetValue(target, service);
         }
 
-        foreach (var propertyInfo in target.GetType().GetProperties(
-                     BindingFlags.Instance
-                     | BindingFlags.NonPublic
-                     | BindingFlags.Public)
+        foreach (var propertyInfo in target
+                     .GetType()
+                     .GetProperties
+                     (
+                         BindingFlags.Instance
+                         | BindingFlags.NonPublic
+                         | BindingFlags.Public
+                     )
                 )
         {
             if (!Attribute.IsDefined(propertyInfo, typeof(InjectAttribute)))
@@ -103,8 +111,11 @@ public partial class DependencyManager : Node, IService
                     // If there is no setter at all for this PropertyInfo, then the DotNet compiler still
                     // has a hidden 'Backing Field' property that we can find via reflection and write to.
                     var backingFieldName = $"<{propertyInfo.Name}>k__BackingField";
-                    var backingField = propertyInfo.DeclaringType?.GetField(backingFieldName,
-                        BindingFlags.Instance | BindingFlags.NonPublic);
+                    var backingField = propertyInfo.DeclaringType?.GetField
+                    (
+                        backingFieldName,
+                        BindingFlags.Instance | BindingFlags.NonPublic
+                    );
 
                     if (backingField != null)
                         backingField.SetValue(target, service);
@@ -122,10 +133,14 @@ public partial class DependencyManager : Node, IService
 
     private bool IsInjectable(object target)
     {
-        foreach (var field in target.GetType().GetFields(
-                     BindingFlags.Instance
-                     | BindingFlags.NonPublic
-                     | BindingFlags.Public)
+        foreach (var field in target
+                     .GetType()
+                     .GetFields
+                     (
+                         BindingFlags.Instance
+                         | BindingFlags.NonPublic
+                         | BindingFlags.Public
+                     )
                 )
             if (Attribute.IsDefined(field, typeof(InjectAttribute)))
                 return true;
@@ -160,10 +175,7 @@ public partial class DependencyManager : Node, IService
 
     private List<Node> GetAllChildren(Node rootNode)
     {
-        List<Node> currentList =
-        [
-            rootNode
-        ];
+        List<Node> currentList = [rootNode];
 
         foreach (var child in rootNode.GetChildren()) currentList.AddRange(GetAllChildren(child));
 

@@ -1,10 +1,11 @@
 using Godot;
 
-namespace AvoidClaws.code.dotnet.UI.Screens;
+namespace AvoidClaws.code.dotnet.Screens.Screens;
 
 public partial class JoinGameScreen : BasicScreen
 {
-    [Export] private LineEdit? _hostAddressInput;
+    [Export]
+    private LineEdit? _hostAddressInput;
 
     public override void _Ready()
     {

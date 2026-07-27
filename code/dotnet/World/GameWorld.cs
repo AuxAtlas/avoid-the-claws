@@ -12,7 +12,7 @@ using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Services;
 using Godot;
 
-namespace AvoidClaws.code.dotnet.Levels;
+namespace AvoidClaws.code.dotnet.World;
 
 public partial class GameWorld : Node, IService
 {
@@ -21,9 +21,11 @@ public partial class GameWorld : Node, IService
 
     private Node? _currentMapNode;
 
-    [Export] private Node? _mapSocketNode;
+    [Export]
+    private Node? _mapSocketNode;
 
-    [Export] public Camera3D? DefaultSpectatorCamera;
+    [Export]
+    public Camera3D? DefaultSpectatorCamera;
 
     [Inject]
     protected CoreGame Core { get; } = null!;
@@ -145,10 +147,13 @@ public partial class GameWorld : Node, IService
             return;
 
         if (IsServer)
-            Core.Network.SendToAllReliableUnordered(new DestroyObjectPacket
-            {
-                TargetObjectId = kableId
-            });
+            Core.Network.SendToAllReliableUnordered
+            (
+                new DestroyObjectPacket
+                {
+                    TargetObjectId = kableId
+                }
+            );
 
         targetNode.Free();
     }
@@ -214,24 +219,30 @@ public partial class GameWorld : Node, IService
             case IActor actor:
             {
                 _spawnedActors.TryAdd(actor.KableId!, actor);
-                Core.EventBus.Publish(new ActorSpawnedEvent
-                {
-                    Actor = actor,
-                    RootNode = node,
-                    Level = this
-                });
+                Core.EventBus.Publish
+                (
+                    new ActorSpawnedEvent
+                    {
+                        Actor = actor,
+                        RootNode = node,
+                        Level = this
+                    }
+                );
                 break;
             }
             case IController controller:
             {
                 _spawnedControllers.TryAdd(controller.KableId!, controller);
 
-                Core.EventBus.Publish(new ControllerSpawnedEvent
-                {
-                    Controller = controller,
-                    RootNode = node,
-                    Level = this
-                });
+                Core.EventBus.Publish
+                (
+                    new ControllerSpawnedEvent
+                    {
+                        Controller = controller,
+                        RootNode = node,
+                        Level = this
+                    }
+                );
                 break;
             }
         }
@@ -250,23 +261,29 @@ public partial class GameWorld : Node, IService
             case IActor actor:
             {
                 _spawnedActors.Remove(actor.KableId);
-                Core.EventBus.Publish(new ObjectDespawnedEvent
-                {
-                    KableObject = actor,
-                    RootNode = node,
-                    GameWorld = this
-                });
+                Core.EventBus.Publish
+                (
+                    new ObjectDespawnedEvent
+                    {
+                        KableObject = actor,
+                        RootNode = node,
+                        GameWorld = this
+                    }
+                );
                 break;
             }
             case IController controller:
             {
                 _spawnedControllers.Remove(controller.KableId);
-                Core.EventBus.Publish(new ObjectDespawnedEvent
-                {
-                    KableObject = controller,
-                    RootNode = node,
-                    GameWorld = this
-                });
+                Core.EventBus.Publish
+                (
+                    new ObjectDespawnedEvent
+                    {
+                        KableObject = controller,
+                        RootNode = node,
+                        GameWorld = this
+                    }
+                );
                 break;
             }
         }
@@ -319,10 +336,7 @@ public partial class GameWorld : Node, IService
 
     public List<Node> GetAllDescendantsOf(Node rootNode)
     {
-        List<Node> currentList =
-        [
-            rootNode
-        ];
+        List<Node> currentList = [rootNode];
 
         foreach (var child in rootNode.GetChildren())
             currentList.AddRange(GetAllDescendantsOf(child));

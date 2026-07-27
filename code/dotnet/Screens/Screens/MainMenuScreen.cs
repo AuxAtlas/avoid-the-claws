@@ -1,13 +1,15 @@
 using AvoidClaws.code.dotnet.Data;
 using Godot;
 
-namespace AvoidClaws.code.dotnet.UI.Screens;
+namespace AvoidClaws.code.dotnet.Screens.Screens;
 
 public partial class MainMenuScreen : BasicScreen
 {
-    [Export] private Label? _errorMessageLabel;
+    [Export]
+    private Label? _errorMessageLabel;
 
-    [Export] private Control? _errorMessagePanel;
+    [Export]
+    private Control? _errorMessagePanel;
 
     public override void _Ready()
     {

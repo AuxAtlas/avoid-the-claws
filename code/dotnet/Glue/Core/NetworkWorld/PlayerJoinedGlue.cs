@@ -5,7 +5,6 @@ using AvoidClaws.code.dotnet.Events.Networking;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Networking.Packets.State;
-using AvoidClaws.code.dotnet.Services;
 
 namespace AvoidClaws.code.dotnet.Glue.Core.NetworkWorld;
 
@@ -57,12 +56,16 @@ public partial class PlayerJoinedGlue : GameGlue
         if (newPlayerKableConnection == null) throw new InvalidOperationException("NetPlayerJoinedEvent fired with a KableConnectionId that is unknown to the network.");
 
         // Tell THIS new client to spawn a 'PlayerController'(LocalPlayer) for themselves
-        Core.Network.SendToClientReliableOrdered(new SpawnControllerPacket
-        {
-            SpawnedObjectId = spawnedController.KableId,
-            Type = CoreGame.ControllerType.LocalPlayer,
-            AuthorityConnectionId = spawnedController.AuthorityConnectionId
-        }, newPlayerKableConnection);
+        Core.Network.SendToClientReliableOrdered
+        (
+            new SpawnControllerPacket
+            {
+                SpawnedObjectId = spawnedController.KableId,
+                Type = CoreGame.ControllerType.LocalPlayer,
+                AuthorityConnectionId = spawnedController.AuthorityConnectionId
+            },
+            newPlayerKableConnection
+        );
 
         SpawnActorPacket spawnActorPacket = new()
         {
@@ -78,12 +81,16 @@ public partial class PlayerJoinedGlue : GameGlue
         foreach (var actor in Core.World.SpawnedActors)
         {
             if (actor.KableId != spawnedActor.KableId)
-                Core.Network.SendToClientReliableOrdered(new SpawnActorPacket
-                {
-                    ActorId = actor.KableId,
-                    AuthorityConnectionId = actor.AuthorityConnectionId,
-                    Type = Core.Resources.GetActorType(actor)
-                }, newPlayerKableConnection);
+                Core.Network.SendToClientReliableOrdered
+                (
+                    new SpawnActorPacket
+                    {
+                        ActorId = actor.KableId,
+                        AuthorityConnectionId = actor.AuthorityConnectionId,
+                        Type = Core.Resources.GetActorType(actor)
+                    },
+                    newPlayerKableConnection
+                );
 
             foreach (var buff in actor.GetBuffs())
             {
@@ -110,19 +117,27 @@ public partial class PlayerJoinedGlue : GameGlue
             var boundType = Core.Resources.GetControllerType(controller);
             if (boundType == CoreGame.ControllerType.LocalPlayer) boundType = CoreGame.ControllerType.Dummy;
 
-            Core.Network.SendToClientReliableOrdered(new SpawnControllerPacket
-            {
-                SpawnedObjectId = controller.KableId,
-                Type = boundType,
-                AuthorityConnectionId = controller.AuthorityConnectionId
-            }, newPlayerKableConnection);
+            Core.Network.SendToClientReliableOrdered
+            (
+                new SpawnControllerPacket
+                {
+                    SpawnedObjectId = controller.KableId,
+                    Type = boundType,
+                    AuthorityConnectionId = controller.AuthorityConnectionId
+                },
+                newPlayerKableConnection
+            );
         }
 
         spawnedController.Attach(spawnedActor);
 
-        Core.Network.SendToClientReliableOrdered(new NetworkStatePacket
-        {
-            State = Core.Network.GetStateOrCached()
-        }, newPlayerKableConnection);
+        Core.Network.SendToClientReliableOrdered
+        (
+            new NetworkStatePacket
+            {
+                State = Core.Network.GetStateOrCached()
+            },
+            newPlayerKableConnection
+        );
     }
 }

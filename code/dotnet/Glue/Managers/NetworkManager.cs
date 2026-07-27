@@ -250,18 +250,25 @@ public partial class NetworkManager : Node, IService
         if (IsServer)
         {
             _kablePeers.Add(connection.ConnectionId, connection);
-            SendToClientReliableOrdered(new NetworkInitPacket
-            {
-                AssignedConnectionId = connection.ConnectionId,
-                ServerConnectionId = GetServerConnectionId()
-            }, connection);
+            SendToClientReliableOrdered
+            (
+                new NetworkInitPacket
+                {
+                    AssignedConnectionId = connection.ConnectionId,
+                    ServerConnectionId = GetServerConnectionId()
+                },
+                connection
+            );
         }
 
-        Core.EventBus.Publish(new NetPlayerJoinedEvent
-        {
-            JoinedNetTick = NetworkTick,
-            KableConnectionId = connection.ConnectionId
-        });
+        Core.EventBus.Publish
+        (
+            new NetPlayerJoinedEvent
+            {
+                JoinedNetTick = NetworkTick,
+                KableConnectionId = connection.ConnectionId
+            }
+        );
     }
 
     private void HandleObjectDespawnedEvent(ObjectDespawnedEvent e, KableConnection? source)
@@ -269,10 +276,13 @@ public partial class NetworkManager : Node, IService
         if (IsClient)
             return;
 
-        SendToAllReliableOrdered(new DestroyObjectPacket
-        {
-            TargetObjectId = e.KableObject.KableId
-        });
+        SendToAllReliableOrdered
+        (
+            new DestroyObjectPacket
+            {
+                TargetObjectId = e.KableObject.KableId
+            }
+        );
     }
 
     public override void _Process(double delta)
@@ -366,11 +376,14 @@ public partial class NetworkManager : Node, IService
 
         Core.Resources.LoadingScreenHandle.Visible = false;
 
-        Core.EventBus.Publish(new NetPlayerJoinedEvent
-        {
-            JoinedNetTick = NetworkTick,
-            KableConnectionId = MyConnectionId
-        });
+        Core.EventBus.Publish
+        (
+            new NetPlayerJoinedEvent
+            {
+                JoinedNetTick = NetworkTick,
+                KableConnectionId = MyConnectionId
+            }
+        );
     }
 
 
@@ -432,7 +445,9 @@ public partial class NetworkManager : Node, IService
         _cachedNetWriter.Reset();
         PacketHandlersManager.SerializePacket(_cachedNetWriter, packet);
 
-        _kablePeers.Where(pair => !_toSkipPeersCache.Contains(pair.Key)).ToList()
+        _kablePeers
+            .Where(pair => !_toSkipPeersCache.Contains(pair.Key))
+            .ToList()
             .ForEach(x => x.Value.SendPacket(_cachedNetWriter, deliveryMethod));
     }
 

@@ -23,7 +23,8 @@ public class PacketHandlersManager
 
     public void DiscoverPacketHandlers(Assembly assembly)
     {
-        var result = assembly.GetTypes()
+        var result = assembly
+            .GetTypes()
             .Where(t => t.IsSubclassOf(typeof(PacketHandler<IGamePacket>)));
 
         IEnumerable<Type> typesResult = result as Type[] ?? result.ToArray();

@@ -1,6 +1,6 @@
 using AvoidClaws.code.dotnet.Actors;
-using AvoidClaws.code.dotnet.Levels;
 using Godot;
+using GameWorld = AvoidClaws.code.dotnet.World.GameWorld;
 
 namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 

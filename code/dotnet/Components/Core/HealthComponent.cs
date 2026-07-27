@@ -6,7 +6,8 @@ namespace AvoidClaws.code.dotnet.Components.Core;
 
 public partial class HealthComponent : Node, IComponent
 {
-    [Export] private float _maxHealth = 100;
+    [Export]
+    private float _maxHealth = 100;
 
     [Signal]
     public delegate void HealthChangedEventHandler(HealthUpdateInfo healthUpdateInfo);

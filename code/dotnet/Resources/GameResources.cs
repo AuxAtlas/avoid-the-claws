@@ -59,14 +59,16 @@ public partial class GameResources : Node, IService
 
     public PackedScene? GetActorPrefab(CoreGame.ActorType type)
     {
-        var result = _actorRegistry.FirstOrDefault(x =>
-        {
-            if (Attribute.GetCustomAttribute(x.Value.Item1, typeof(ActorAttribute)) is ActorAttribute actorAttribute)
-                if (actorAttribute.ActorType == type)
-                    return true;
+        var result = _actorRegistry.FirstOrDefault
+        (x =>
+            {
+                if (Attribute.GetCustomAttribute(x.Value.Item1, typeof(ActorAttribute)) is ActorAttribute actorAttribute)
+                    if (actorAttribute.ActorType == type)
+                        return true;
 
-            return false;
-        });
+                return false;
+            }
+        );
         return result.Value.Item2;
     }
 

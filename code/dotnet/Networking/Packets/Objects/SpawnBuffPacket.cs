@@ -1,6 +1,5 @@
 using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Networking.Data;
-using AvoidClaws.code.dotnet.Services;
 using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
