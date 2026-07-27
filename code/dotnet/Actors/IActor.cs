@@ -1,12 +1,13 @@
 using System.Collections.Immutable;
 using AvoidClaws.code.dotnet.Buffs;
 using AvoidClaws.code.dotnet.Components;
+using AvoidClaws.code.dotnet.Glue;
 using AvoidClaws.code.dotnet.Networking.Data;
 using Godot;
 
 namespace AvoidClaws.code.dotnet.Actors;
 
-public interface IActor : IKableObject
+public interface IActor : IGameObject
 {
     public BoxShape3D? HurtBox { get; }
     public Vector3 GlobalPosition { get; }

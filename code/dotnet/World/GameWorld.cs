@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -6,53 +5,35 @@ using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Data;
 using AvoidClaws.code.dotnet.Events.Lifecycle;
+using AvoidClaws.code.dotnet.Glue;
 using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
-using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Services;
+using AvoidClaws.code.dotnet.World.Managers;
 using Godot;
 
 namespace AvoidClaws.code.dotnet.World;
 
 public partial class GameWorld : Node, IService
 {
-    private readonly Dictionary<KableId, IActor> _spawnedActors = new();
-    private readonly Dictionary<KableId, IController> _spawnedControllers = new();
-
-    private Node? _currentMapNode;
+    [Export]
+    public Camera3D? DefaultSpectatorCamera { get; private set; }
 
     [Export]
-    private Node? _mapSocketNode;
+    public ActorManager Actors { get; private set; } = null!;
 
     [Export]
-    public Camera3D? DefaultSpectatorCamera;
+    public ControllerManager Controllers { get; private set; } = null!;
+
+    [Export]
+    public LevelManager Level { get; private set; } = null!;
 
     [Inject]
     protected CoreGame Core { get; } = null!;
-
-    public readonly List<ErrorMessage> DisplayedErrorMessages = new();
-
-    public bool IsClient => !IsServer;
-    public bool IsServer => Core.Network.IsServer;
-
-    public ReadOnlyCollection<IActor> SpawnedActors => _spawnedActors.Values.ToList().AsReadOnly();
-    public ReadOnlyCollection<IController> SpawnedControllers => _spawnedControllers.Values.ToList().AsReadOnly();
-
-    public Random Random { get; private set; }
-
-    public override void _Ready()
-    {
-        ChangeMapTo(Core.Resources.ScreenPrefabs.MainMenuScreen);
-    }
-
+    
     public override void _EnterTree()
     {
         base._EnterTree();
-
-        if (_mapSocketNode is null)
-            GD.PrintErr("Level Error: 'MapSocketNode' is null");
-
-        Random = new Random(Guid.NewGuid().GetHashCode());
 
         GetTree().NodeAdded += OnNodeAdded;
         GetTree().NodeRemoved += OnNodeRemoved;
@@ -66,12 +47,10 @@ public partial class GameWorld : Node, IService
 
     public void ResetWorld()
     {
-        if (_currentMapNode is null)
-            return;
-
-        _currentMapNode.QueueFree();
-        _spawnedActors.Clear();
-        _spawnedControllers.Clear();
+        List<IGameObject> objectsToDestroy = new();
+        objectsToDestroy.AddRange(Actors.SpawnedActors);
+        objectsToDestroy.AddRange(Controllers.SpawnedControllers);
+        objectsToDestroy.ForEach(x => DestroyObject(x.KableId));
     }
 
     public Node? SpawnPrefab(PackedScene? prefab, KableId? presetKableId = null)
@@ -136,26 +115,32 @@ public partial class GameWorld : Node, IService
 
     public void DestroyObject(KableId kableId)
     {
-        Node? targetNode = null;
-        if (_spawnedActors.Remove(kableId, out var targetActor))
-            targetNode = (Node)targetActor;
-
-        if (_spawnedControllers.Remove(kableId, out var targetController))
-            targetNode = (Node)targetController;
-
-        if (targetNode is null)
+        if (!CheckObjectExists(kableId))
             return;
 
-        if (IsServer)
-            Core.Network.SendToAllReliableUnordered
-            (
-                new DestroyObjectPacket
-                {
-                    TargetObjectId = kableId
-                }
-            );
+        IGameObject? target = null;
 
-        targetNode.Free();
+        target = Actors.GetActor(kableId);
+
+        if (target == null)
+            target = Controllers.GetController(kableId);
+
+        if (target == null)
+        {
+            GD.PushError($"Tried to destroy an unknown GameObject with KableId of '{kableId}'");
+            return;
+        }
+
+        DestroyObject(target);
+    }
+
+    public void DestroyObject(IGameObject target)
+    {
+        target.Stop();
+        target.Teardown();
+
+        if (target is Node node)
+            node.QueueFree();
     }
 
 
@@ -181,6 +166,11 @@ public partial class GameWorld : Node, IService
         return default;
     }
 
+    public bool CheckObjectExists(KableId kableId)
+    {
+        return Actors.CheckActorExists(kableId) || Controllers.CheckControllerExists(kableId);
+    }
+
     public IKableObject? GetKableObject(KableId kableId)
     {
         return GetKableObject<IKableObject>(kableId);
@@ -192,57 +182,26 @@ public partial class GameWorld : Node, IService
     // }
 
 
-    public KableId GenerateKableId()
-    {
-        return new KableId(GenerateRawKableId());
-    }
-
-    public uint GenerateRawKableId()
-    {
-        uint result = 0;
-        while (result == 0)
-            result = (uint)Random.Next() + (uint)Random.Next();
-        return result;
-    }
 
 
     private void OnNodeAdded(Node node)
     {
-        if (node is not IKableObject kableObject)
+        if (node is not IGameObject gameObject)
             return;
 
-        if (!kableObject.KableId.IsValid)
-            kableObject.KableSetup(GenerateKableId());
+        if (!gameObject.KableId.IsValid)
+            gameObject.KableSetup(Core.GenerateKableId());
 
         switch (node)
         {
             case IActor actor:
             {
-                _spawnedActors.TryAdd(actor.KableId!, actor);
-                Core.EventBus.Publish
-                (
-                    new ActorSpawnedEvent
-                    {
-                        Actor = actor,
-                        RootNode = node,
-                        Level = this
-                    }
-                );
+                Actors.HandleIncomingActor(actor);
                 break;
             }
             case IController controller:
             {
-                _spawnedControllers.TryAdd(controller.KableId!, controller);
-
-                Core.EventBus.Publish
-                (
-                    new ControllerSpawnedEvent
-                    {
-                        Controller = controller,
-                        RootNode = node,
-                        Level = this
-                    }
-                );
+                Controllers.HandleIncomingController(controller);
                 break;
             }
         }
@@ -250,43 +209,33 @@ public partial class GameWorld : Node, IService
 
     private void OnNodeRemoved(Node node)
     {
-        if (node is not IKableObject kableObject)
+        if (node is not IGameObject gameObject)
             return;
 
-        if (!kableObject.KableId.IsValid)
+        if (!gameObject.KableId.IsValid)
             return;
 
         switch (node)
         {
             case IActor actor:
             {
-                _spawnedActors.Remove(actor.KableId);
-                Core.EventBus.Publish
-                (
-                    new ObjectDespawnedEvent
-                    {
-                        KableObject = actor,
-                        RootNode = node,
-                        GameWorld = this
-                    }
-                );
+                Actors.HandleOutgoingActor(actor);
                 break;
             }
             case IController controller:
             {
-                _spawnedControllers.Remove(controller.KableId);
-                Core.EventBus.Publish
-                (
-                    new ObjectDespawnedEvent
-                    {
-                        KableObject = controller,
-                        RootNode = node,
-                        GameWorld = this
-                    }
-                );
+                Controllers.HandleOutgoingController(controller);
                 break;
             }
         }
+
+        Core.EventBus.Publish
+        (
+            new GameObjectDespawnedEvent
+            {
+                GameObject = gameObject
+            }
+        );
     }
 
 

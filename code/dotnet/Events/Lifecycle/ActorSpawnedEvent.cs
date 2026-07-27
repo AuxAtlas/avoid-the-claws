@@ -7,6 +7,4 @@ namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 public class ActorSpawnedEvent : GameEvent
 {
     public IActor? Actor { get; set; }
-    public Node? RootNode { get; set; }
-    public GameWorld? Level { get; set; }
 }

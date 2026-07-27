@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AvoidClaws.code.dotnet.Services;
 using Godot;
 
-namespace AvoidClaws.code.dotnet.Glue.Managers;
+namespace AvoidClaws.code.dotnet.Services;
 
 public partial class DependencyManager : Node
 {

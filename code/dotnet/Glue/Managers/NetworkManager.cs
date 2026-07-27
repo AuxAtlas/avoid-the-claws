@@ -7,6 +7,7 @@ using AvoidClaws.code.dotnet.Events.Lifecycle;
 using AvoidClaws.code.dotnet.Events.Networking;
 using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Networking.Data;
+using AvoidClaws.code.dotnet.Networking.Packets;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Networking.Packets.State;
 using AvoidClaws.code.dotnet.Services;
@@ -271,7 +272,7 @@ public partial class NetworkManager : Node, IService
         );
     }
 
-    private void HandleObjectDespawnedEvent(ObjectDespawnedEvent e, KableConnection? source)
+    private void HandleObjectDespawnedEvent(GameObjectDespawnedEvent e, KableConnection? source)
     {
         if (IsClient)
             return;
@@ -280,7 +281,7 @@ public partial class NetworkManager : Node, IService
         (
             new DestroyObjectPacket
             {
-                TargetObjectId = e.KableObject.KableId
+                TargetObjectId = e.GameObject.KableId
             }
         );
     }

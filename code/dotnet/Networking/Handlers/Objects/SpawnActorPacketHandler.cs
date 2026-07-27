@@ -1,5 +1,4 @@
 using System.Linq;
-using AvoidClaws.code.dotnet.Glue.Misc;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using Godot;

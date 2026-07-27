@@ -1,7 +1,8 @@
 using AvoidClaws.code.dotnet.Networking.Data;
+using AvoidClaws.code.dotnet.Networking.Packets;
 using AvoidClaws.code.dotnet.Services;
 
-namespace AvoidClaws.code.dotnet.Glue.Misc;
+namespace AvoidClaws.code.dotnet.Networking.Handlers;
 
 public abstract class PacketHandler<TPacketType> where TPacketType : IGamePacket
 {
