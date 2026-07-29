@@ -2,7 +2,6 @@ using System;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Events.Networking;
-using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Networking.Packets.State;
 
@@ -24,7 +23,7 @@ public partial class PlayerJoinedGlue : GameGlue
         base._ExitTree();
     }
 
-    private void HandleNetJoinEvent(NetPlayerJoinedEvent e, KableConnection? source)
+    private void HandleNetJoinEvent(NetPlayerJoinedEvent e)
     {
         if (IsClient)
         {
@@ -32,12 +31,12 @@ public partial class PlayerJoinedGlue : GameGlue
             return;
         }
 
-        var spawnedActorNode = Core.World.SpawnPrefab(Core.Resources.ActorPrefabs.PlayerActorPrefab);
+        var spawnedActorNode = Core.World.Actors.SpawnActorPrefab(Core.Resources.ActorPrefabs.PlayerActorPrefab);
         if (spawnedActorNode is not IActor spawnedActor)
             return;
         spawnedActor.SetKableAuthority(e.KableConnectionId);
 
-        var spawnedControllerNode = Core.World.SpawnPrefab(Core.Resources.ControllerPrefabs.DummyControllerPrefab);
+        var spawnedControllerNode = Core.World.Controllers.SpawnControllerPrefab(Core.Resources.ControllerPrefabs.DummyControllerPrefab);
         if (spawnedControllerNode is not IController spawnedController)
             return;
 
@@ -78,7 +77,7 @@ public partial class PlayerJoinedGlue : GameGlue
         spawnedActor.Respawn();
 
         // Inform the new player of the current game state
-        foreach (var actor in Core.World.SpawnedActors)
+        foreach (var actor in Core.World.Actors.SpawnedActors)
         {
             if (actor.KableId != spawnedActor.KableId)
                 Core.Network.SendToClientReliableOrdered
@@ -109,7 +108,7 @@ public partial class PlayerJoinedGlue : GameGlue
             }
         }
 
-        foreach (var controller in Core.World.SpawnedControllers)
+        foreach (var controller in Core.World.Controllers.SpawnedControllers)
         {
             if (controller.KableId == spawnedController.KableId)
                 continue;

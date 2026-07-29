@@ -26,8 +26,6 @@ public interface IActor : IGameObject
 
     public void SetClientFocused();
 
-    public void HandleNetTick(uint tick);
-
     public void ApplyBuff(IBuff buff);
     public void RemoveBuff(IBuff buff);
     public ImmutableArray<IBuff> GetBuffs();

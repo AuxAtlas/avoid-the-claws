@@ -26,10 +26,10 @@ public partial class MainMenuScreen : BasicScreen
 
         ErrorMessage? messageToShow = null;
 
-        if (Core.World.DisplayedErrorMessages.Count > 0)
+        if (Core.DisplayedErrorMessages.Count > 0)
         {
-            messageToShow = Core.World.DisplayedErrorMessages[0];
-            foreach (var errorMessage in Core.World.DisplayedErrorMessages)
+            messageToShow = Core.DisplayedErrorMessages[0];
+            foreach (var errorMessage in Core.DisplayedErrorMessages)
                 if (errorMessage.SecondsRemaining < messageToShow.SecondsRemaining)
                     messageToShow = errorMessage;
         }

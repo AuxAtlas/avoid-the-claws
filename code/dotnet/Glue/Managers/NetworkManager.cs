@@ -99,6 +99,7 @@ public partial class NetworkManager : Node, IService
 
     protected void Reset()
     {
+        _netManager?.DisconnectAll();
         _netManager?.Stop();
         _kablePeers.Clear();
         NetworkTick = 0;
@@ -109,12 +110,12 @@ public partial class NetworkManager : Node, IService
     public void DisconnectNetwork(string? reason = "Lost connection to host.")
     {
         Reset();
-        Core.World.DisplayedErrorMessages.Clear();
+        Core.DisplayedErrorMessages.Clear();
 
         if (_netManager is not null && _netManager.IsRunning)
         {
             GD.Print($"NetworkManager Disconnected: {reason}");
-            Core.World.SetDisplayedErrorMessage($"NetworkManager: {reason}");
+            Core.CriticalError($"NetworkManager Disconnected: {reason}");
         }
 
         Core.World.GotoMainMenu();
@@ -128,9 +129,9 @@ public partial class NetworkManager : Node, IService
             FinishedInitialSync = true
         };
 
-        foreach (var actor in Core.World.SpawnedActors) state.ObjectStates.Add(actor.GetCurrentState());
+        foreach (var actor in Core.World.Actors.SpawnedActors) state.ObjectStates.Add(actor.GetCurrentState());
 
-        foreach (var controller in Core.World.SpawnedControllers) state.ObjectStates.Add(controller.GetCurrentState());
+        foreach (var controller in Core.World.Controllers.SpawnedControllers) state.ObjectStates.Add(controller.GetCurrentState());
 
         if (IsServer)
             state.ServerKableId = new KableConnectionId(MyConnectionId.Id);
@@ -157,7 +158,7 @@ public partial class NetworkManager : Node, IService
 
         foreach (var objectState in state.ObjectStates)
         {
-            var tmpKableObject = Core.World.GetKableObject(objectState.ObjectId);
+            var tmpKableObject = Core.World.GetGameObject(objectState.ObjectId);
 
             tmpKableObject?.IngestNetworkState(objectState);
         }
@@ -198,15 +199,11 @@ public partial class NetworkManager : Node, IService
 
     private void HandleNetworkError(IPEndPoint endPoint, SocketError socketError)
     {
-        GD.PrintErr($"NetworkManager: Networking error: {socketError}");
-
         if (IsServer)
             return;
-
+        
         Reset();
-
-        Core.World.SetDisplayedErrorMessage("Unknown networking error.");
-        Core.World.GotoMainMenu();
+        Core.CriticalError($"NetworkManager: Networking error: {socketError}");
     }
 
     private void HandlePeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
@@ -214,10 +211,7 @@ public partial class NetworkManager : Node, IService
         if (IsClient)
         {
             Reset();
-            GD.Print($"NetworkManager: lost connection to host.\nReason: {disconnectInfo.Reason}");
-            Core.World.SetDisplayedErrorMessage("Lost connection to game host.");
-
-            Core.World.GotoMainMenu();
+            Core.CriticalError($"NetworkManager: lost connection to host.\nReason: {disconnectInfo.Reason}");
             return;
         }
 
@@ -244,7 +238,7 @@ public partial class NetworkManager : Node, IService
     private void HandlePeerConnected(NetPeer peer)
     {
         GD.Print("NetworkManager: New net peer connected.");
-        var connection = new KableConnection(peer, Core.World.GenerateKableId());
+        var connection = new KableConnection(peer, Core.GenerateKableId());
         peer.SetKableConnection(connection);
 
         // Only add to list if we are the server. Otherwise, the server will send a 'NetworkInitPacket' shortly, telling us it's ConnectionId.
@@ -299,7 +293,7 @@ public partial class NetworkManager : Node, IService
         {
             _deltaSinceLastNetTick -= TickDeltaTime;
             NetworkTick++;
-            Core.World.ProcessNetTick(NetworkTick);
+            Core.ProcessNetTick(NetworkTick);
         }
     }
 
@@ -355,7 +349,7 @@ public partial class NetworkManager : Node, IService
         _netManager.Start(_serverPort);
 
         Core.World.ChangeMapTo(Core.Resources.MapPrefabs.DevEnvMap);
-        var kableConnectionId = Core.World.GenerateRawKableId();
+        var kableConnectionId = Core.GenerateRawKableId();
         MyConnectionId = new KableConnectionId();
         GD.Print($"Server KableConnectionId: {MyConnectionId}");
 

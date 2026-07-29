@@ -20,7 +20,7 @@ public interface IGameObject : IKableObject
     /// <summary>
     ///     Called every game tick by the world management systems
     /// </summary>
-    public void GameTick();
+    public void HandleNetTick(uint tick);
 
     /// <summary>
     ///     Object is being told to stop all processing(to pause, essentially)

@@ -47,4 +47,39 @@ public partial class ActorManager : Node, IService
     {
         return _spawnedActors.ContainsKey(kableId);
     }
+
+    public Node? SpawnActorPrefab(PackedScene? prefab, KableId? presetKableId = null)
+    {
+        if (!(prefab?.CanInstantiate()).GetValueOrDefault(false))
+            return null;
+
+        if (presetKableId?.Id < 1)
+            presetKableId = null;
+
+        presetKableId ??= Core.GenerateKableId();
+
+        if (Core.World.GetGameObject(presetKableId.Value) != null)
+        {
+            GD.PrintErr("Level: Tried to spawn multiple KableObject with the same KableId!");
+            return null;
+        }
+
+        var spawned = prefab?.Instantiate();
+
+        if (spawned is not IActor actor)
+        {
+            spawned?.QueueFree();
+            return spawned;
+        }
+
+        actor.KableSetup(presetKableId.Value);
+        actor.SetKableAuthority(Core.Network.GetServerConnectionId());
+
+        AddChild(spawned);
+
+        if (_spawnedActors.TryAdd(presetKableId.Value, actor))
+            GD.Print($"Spawned actor: {presetKableId}");
+
+        return spawned;
+    }
 }

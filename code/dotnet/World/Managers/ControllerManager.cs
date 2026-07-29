@@ -48,4 +48,39 @@ public partial class ControllerManager : Node, IService
     {
         return _spawnedControllers.ContainsKey(kableId);
     }
+
+    public Node? SpawnControllerPrefab(PackedScene? prefab, KableId? presetKableId = null)
+    {
+        if (!(prefab?.CanInstantiate()).GetValueOrDefault(false))
+            return null;
+
+        if (presetKableId?.Id < 1)
+            presetKableId = null;
+
+        presetKableId ??= Core.GenerateKableId();
+
+        if (Core.World.GetGameObject(presetKableId.Value) != null)
+        {
+            GD.PrintErr("Level: Tried to spawn multiple KableObject with the same KableId!");
+            return null;
+        }
+
+        var spawned = prefab?.Instantiate();
+
+        if (spawned is not IController controller)
+        {
+            spawned?.QueueFree();
+            return spawned;
+        }
+
+        controller.KableSetup(presetKableId.Value);
+        controller.SetKableAuthority(Core.Network.GetServerConnectionId());
+
+        AddChild(spawned);
+
+        if (_spawnedControllers.TryAdd(presetKableId.Value, controller))
+            GD.Print($"Spawned controller: {presetKableId}");
+
+        return spawned;
+    }
 }

@@ -3,10 +3,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Controllers;
-using AvoidClaws.code.dotnet.Data;
 using AvoidClaws.code.dotnet.Events.Lifecycle;
 using AvoidClaws.code.dotnet.Glue;
-using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
 using AvoidClaws.code.dotnet.World.Managers;
@@ -53,66 +51,6 @@ public partial class GameWorld : Node, IService
         objectsToDestroy.ForEach(x => DestroyObject(x.KableId));
     }
 
-    public Node? SpawnPrefab(PackedScene? prefab, KableId? presetKableId = null)
-    {
-        if (_currentMapNode is null)
-            return null;
-
-
-        if (!(prefab?.CanInstantiate()).GetValueOrDefault(false))
-            return null;
-
-        if (presetKableId?.Id < 1)
-            presetKableId = null;
-
-        presetKableId ??= GenerateKableId();
-
-        if (GetKableObject<IKableObject>(presetKableId.Value) != null)
-        {
-            GD.PrintErr("Level: Tried to spawn multiple KableObject with the same KableId!");
-            return null;
-        }
-
-        var spawned = prefab?.Instantiate();
-
-        if (_currentMapNode is null)
-            return null;
-
-        if (spawned is not IKableObject kableObject)
-        {
-            _currentMapNode.AddChild(spawned);
-            return spawned;
-        }
-
-        kableObject.KableSetup(presetKableId.Value);
-        kableObject.SetKableAuthority(Core.Network.GetServerConnectionId());
-
-        _currentMapNode.AddChild(spawned);
-
-        switch (spawned)
-        {
-            case IActor actor:
-            {
-                if (_spawnedActors.TryAdd(presetKableId.Value, actor)) GD.Print($"Spawned actor: {presetKableId}");
-
-                break;
-            }
-            case IController controller:
-            {
-                if (_spawnedControllers.TryAdd(presetKableId.Value, controller)) GD.Print($"Spawned controller: {presetKableId}");
-
-                break;
-            }
-        }
-
-        return spawned;
-    }
-
-    public T? SpawnPrefab<T>(PackedScene? prefab, KableId? presetKableId = null) where T : Node
-    {
-        return (T?)SpawnPrefab(prefab, presetKableId);
-    }
-
     public void DestroyObject(KableId kableId)
     {
         if (!CheckObjectExists(kableId))
@@ -143,37 +81,24 @@ public partial class GameWorld : Node, IService
             node.QueueFree();
     }
 
-
-    public T? GetKableObject<T>(uint kableId) where T : IKableObject
+    public T? GetGameObject<T>(KableId kableId) where T : IGameObject
     {
-        var found = (T?)_spawnedActors.FirstOrDefault(x => x.Key.Id == kableId).Value;
-        if (found is not null)
-            return found;
+        var found = default(T);
 
-        found = (T?)_spawnedControllers.FirstOrDefault(x => x.Key.Id == kableId).Value;
-
+        found ??= (T?)Actors.GetActor(kableId);
+        found ??= (T?)Controllers.GetController(kableId);
+        
         return found;
     }
 
-    public T? GetKableObject<T>(KableId kableId) where T : IKableObject
+    public IGameObject? GetGameObject(KableId kableId)
     {
-        if (_spawnedActors.TryGetValue(kableId, out var actor))
-            return (T)actor;
-
-        if (_spawnedControllers.TryGetValue(kableId, out var controller))
-            return (T)controller;
-
-        return default;
+        return GetGameObject<IGameObject>(kableId);
     }
 
     public bool CheckObjectExists(KableId kableId)
     {
         return Actors.CheckActorExists(kableId) || Controllers.CheckControllerExists(kableId);
-    }
-
-    public IKableObject? GetKableObject(KableId kableId)
-    {
-        return GetKableObject<IKableObject>(kableId);
     }
 
     // public PlayerController? GetPlayerController()
@@ -241,46 +166,21 @@ public partial class GameWorld : Node, IService
 
     internal void ProcessNetTick(uint tick)
     {
-        for (var i = 0; i < DisplayedErrorMessages.Count; i++)
-        {
-            DisplayedErrorMessages[i].SecondsRemaining -= NetworkManager.TickDeltaTimeF;
-            if (DisplayedErrorMessages[i].SecondsRemaining <= 0) DisplayedErrorMessages.RemoveAt(i);
-        }
-
-        foreach (var controller in SpawnedControllers)
+        foreach (var controller in Controllers.SpawnedControllers)
             controller.HandleNetTick(tick);
 
-        foreach (var actor in SpawnedActors)
+        foreach (var actor in Actors.SpawnedActors)
             actor.HandleNetTick(tick);
     }
 
-    public void ChangeMapTo(PackedScene? map)
+    public void ChangeMapTo(PackedScene map)
     {
-        if (_mapSocketNode == null)
-        {
-            GD.PrintErr("Tried to change map but 'MapRootNode' is null.");
-            return;
-        }
-
-        ResetWorld();
-
-        _currentMapNode = map?.Instantiate();
-        _mapSocketNode.AddChild(_currentMapNode);
+        Level.ChangeMapTo(map);
     }
 
     public void GotoMainMenu()
     {
         Core.World.ChangeMapTo(Core.Resources.ScreenPrefabs.MainMenuScreen);
-    }
-
-    public void SetDisplayedErrorMessage(string errorMessage, float showForSeconds = 10.0f)
-    {
-        ErrorMessage msg = new()
-        {
-            Message = errorMessage,
-            SecondsRemaining = showForSeconds
-        };
-        DisplayedErrorMessages.Add(msg);
     }
 
     public List<Node> GetAllDescendantsOf(Node rootNode)
@@ -296,8 +196,8 @@ public partial class GameWorld : Node, IService
     public ReadOnlyCollection<IKableObject> GetAllOwnedBy(KableConnection owner)
     {
         List<IKableObject> currentList = new();
-        currentList.AddRange(_spawnedActors.Values.ToList());
-        currentList.AddRange(_spawnedControllers.Values.ToList());
+        currentList.AddRange(Actors.SpawnedActors);
+        currentList.AddRange(Controllers.SpawnedControllers);
 
         return currentList.Where(x => x.AuthorityConnectionId == owner.ConnectionId).ToList().AsReadOnly();
     }

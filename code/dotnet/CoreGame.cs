@@ -70,7 +70,14 @@ public partial class CoreGame : Node, IService
     public void CriticalError(string message)
     {
         GD.PushError($"[Critical Error] {message}");
-        World.SetDisplayedErrorMessage($"[Critical Error] {message}");
+        DisplayedErrorMessages.Add
+        (
+            new ErrorMessage
+            {
+                Message = $"[Critical Error] {message}",
+                SecondsRemaining = 10f
+            }
+        );
         World.GotoMainMenu();
     }
 
@@ -85,5 +92,16 @@ public partial class CoreGame : Node, IService
         while (result == 0)
             result = (uint)Random.Next() + (uint)Random.Next();
         return result;
+    }
+
+    internal void ProcessNetTick(uint tick)
+    {
+        for (var i = 0; i < DisplayedErrorMessages.Count; i++)
+        {
+            DisplayedErrorMessages[i].SecondsRemaining -= NetworkManager.TickDeltaTimeF;
+            if (DisplayedErrorMessages[i].SecondsRemaining <= 0) DisplayedErrorMessages.RemoveAt(i);
+        }
+
+        World.ProcessNetTick(tick);
     }
 }

@@ -15,10 +15,10 @@ public class SpawnControllerPacketHandler : PacketHandler<SpawnControllerPacket>
         if (packet.SpawnedObjectId.Id == 0)
             return;
 
-        if (Core.World.SpawnedControllers.Any(x => x.KableId == packet.SpawnedObjectId))
+        if (Core.World.Controllers.SpawnedControllers.Any(x => x.KableId == packet.SpawnedObjectId))
             return;
 
-        PackedScene? targetPrefab = null;
+        PackedScene? targetPrefab;
         switch (packet.Type)
         {
             case CoreGame.ControllerType.LocalPlayer:
@@ -29,6 +29,6 @@ public class SpawnControllerPacketHandler : PacketHandler<SpawnControllerPacket>
                 break;
         }
 
-        Core.World.SpawnPrefab(targetPrefab, packet.SpawnedObjectId);
+        Core.World.Controllers.SpawnControllerPrefab(targetPrefab, packet.SpawnedObjectId);
     }
 }

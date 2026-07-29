@@ -5,14 +5,14 @@ namespace AvoidClaws.code.dotnet.Resources;
 public partial class ScreenPrefabs : Node
 {
     [Export]
-    public PackedScene? MainMenuScreen { get; private set; }
+    public PackedScene MainMenuScreen { get; private set; } = null!;
 
     [Export]
-    public PackedScene? JoinGameScreen { get; private set; }
+    public PackedScene JoinGameScreen { get; private set; } = null!;
 
     [Export]
-    public PackedScene? OptionsScreen { get; private set; }
+    public PackedScene OptionsScreen { get; private set; } = null!;
 
     [Export]
-    public PackedScene? LoadingScreen { get; private set; }
+    public PackedScene LoadingScreen { get; private set; } = null!;
 }

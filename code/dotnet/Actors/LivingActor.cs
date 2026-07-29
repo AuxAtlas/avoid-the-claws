@@ -98,18 +98,9 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         KableId = connectionId;
     }
 
-    public override void _Ready()
+
+    public void Setup()
     {
-        base._Ready();
-
-        if (BuffsContainer == null)
-            GD.PrintErr("LivingActor: Buffs Container not set.");
-
-        if (ComponentContainer == null)
-            GD.PrintErr("LivingActor: ComponentContainer not set.");
-
-        SpawnedOnTick = CurrentTick;
-
         if (ComponentContainer != null)
         {
             Components.Clear();
@@ -121,6 +112,19 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
             Components.ForEach(x => x.SetupComponent());
         }
+    }
+
+    public void Start()
+    {
+        SpawnedOnTick = CurrentTick;
+    }
+
+    public void Stop()
+    {
+    }
+
+    public void Teardown()
+    {
     }
 
     protected virtual void CacheComponentReferences()
@@ -156,7 +160,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         if (IsClient)
             return;
 
-        Vector3 spawnPos = new(-300f + Core.World.Random.NextSingle() * 500f, 10f, -300f + Core.World.Random.NextSingle() * 500f);
+        Vector3 spawnPos = new(-300f + Core.Random.NextSingle() * 500f, 10f, -300f + Core.Random.NextSingle() * 500f);
         TeleportTo(spawnPos);
     }
 
@@ -206,16 +210,12 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         AuthorityConnectionId = connectionId;
     }
 
-
     public virtual void HandleNetTick(uint tick)
     {
         if (Destroyed || !Core.Network.FinishedInitialSync)
             return;
 
         EditorDescription = GetDebugString();
-
-        List<IBuff> tmpBuffRefs = new(Buffs);
-        tmpBuffRefs.ForEach(x => x.Tick());
 
         ProcessInput(tick);
 

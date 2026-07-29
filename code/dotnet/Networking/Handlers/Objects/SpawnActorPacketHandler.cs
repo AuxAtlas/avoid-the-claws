@@ -15,7 +15,7 @@ public class SpawnActorPacketHandler : PacketHandler<SpawnActorPacket>
         if (packet.ActorId.Id == 0)
             return;
 
-        if (Core.World.SpawnedActors.Any(x => x.KableId == packet.ActorId))
+        if (Core.World.Actors.SpawnedActors.Any(x => x.KableId == packet.ActorId))
             return;
 
         PackedScene? targetPrefab = null;
@@ -26,6 +26,6 @@ public class SpawnActorPacketHandler : PacketHandler<SpawnActorPacket>
                 break;
         }
 
-        Core.World.SpawnPrefab(targetPrefab, packet.ActorId);
+        Core.World.Actors.SpawnActorPrefab(targetPrefab, packet.ActorId);
     }
 }
