@@ -221,9 +221,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
         if (IsServer)
         {
-            var state = GetCurrentState();
-
-            IngestNetworkState(state);
+            StateHistory[tick % NetworkManager.MAX_TICK_SEQUENCE] = GetCurrentState();
         }
 
         // TODO: Add Client2Server input sending
@@ -266,7 +264,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
             ObjectId = KableId,
             AuthorityConnectionId = AuthorityConnectionId
         };
-
+        
         state.Put(Position);
         state.Put(Rotation);
         state.Put(Velocity);
@@ -299,7 +297,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
             throw new InvalidOperationException();
 
         StateHistory[state.NetworkTick % NetworkManager.MAX_TICK_SEQUENCE] = state;
-        SetCurrentState(state);
     }
 
     public void ResetInputs()
@@ -414,22 +411,13 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         return _debugStringBuilder.ToString();
     }
 
-
-    #region VIRTUAL METHODS
+    #region EMPTY VIRTUAL METHODS
 
     protected virtual void GetDebugStringCustom(ref StringBuilder stringBuilder)
     {
     }
 
     protected virtual void ProcessInputCustom(float deltaTimeF, ActorInput input)
-    {
-    }
-
-    protected virtual void WriteStateTo(ObjectState state)
-    {
-    }
-
-    protected virtual void ReadStateFrom(ObjectState state)
     {
     }
 

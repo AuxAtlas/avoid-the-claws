@@ -26,7 +26,8 @@ public partial class HealthComponent : Node, IComponent
         private set
         {
             _maxHealth = value;
-            if (CurrentHealth > _maxHealth) CurrentHealth = _maxHealth;
+            if (CurrentHealth > _maxHealth)
+                CurrentHealth = _maxHealth;
         }
     }
 
