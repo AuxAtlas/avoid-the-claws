@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Data.State;
+using AvoidClaws.code.dotnet.Networking.Data;
 using Godot;
 
 namespace AvoidClaws.code.dotnet.Components.Core;
 
 [Tool]
-public partial class AudioPlayerComponent : Node3D, IComponent
+public partial class AudioPlayerComponent : BaseComponent
 {
     [Export]
     protected AudioStreamPlayer3D? AudioPlayer
@@ -18,14 +19,12 @@ public partial class AudioPlayerComponent : Node3D, IComponent
             UpdateConfigurationWarnings();
         }
     }
-
+    
     private AudioStreamPlayer3D? _audioPlayer;
-    public IActor? ParentActor { get; private set; }
-    public bool ReconciliationMode => ParentActor?.ReconciliationMode ?? false;
 
-    public void SetupComponent()
+    public override void SetupComponent()
     {
-        ParentActor = GetParent()?.GetParentOrNull<IActor>();
+        base.SetupComponent();
         _audioPlayer?.Stop();
     }
 
@@ -56,11 +55,13 @@ public partial class AudioPlayerComponent : Node3D, IComponent
         _audioPlayer.Play();
     }
 
-    public void ReadStateFrom(ObjectState state)
+    public override void ReadStateFrom(ref ObjectState state)
     {
+        
     }
 
-    public void WriteStateTo(ObjectState state)
+    public override void WriteStateTo(ref ObjectState state)
     {
+        
     }
 }

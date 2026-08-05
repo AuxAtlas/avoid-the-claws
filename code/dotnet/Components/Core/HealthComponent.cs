@@ -4,7 +4,7 @@ using Godot;
 
 namespace AvoidClaws.code.dotnet.Components.Core;
 
-public partial class HealthComponent : Node, IComponent
+public partial class HealthComponent : BaseComponent
 {
     [Export]
     private float _maxHealth = 100;
@@ -37,17 +37,12 @@ public partial class HealthComponent : Node, IComponent
     public bool IsDead { get; private set; }
 
 
-    public IActor? ParentActor { get; private set; }
-    public bool ReconciliationMode => ParentActor?.ReconciliationMode ?? false;
-
-
-    public void SetupComponent()
+    public override void SetupComponent()
     {
-        ParentActor = GetParent()?.GetParentOrNull<IActor>();
         Revive();
     }
 
-    public void ReadStateFrom(ObjectState state)
+    public override void ReadStateFrom(ref ObjectState state)
     {
         var oldHealth = CurrentHealth;
         CurrentHealth = state.ReadFloat();
@@ -77,7 +72,7 @@ public partial class HealthComponent : Node, IComponent
         }
     }
 
-    public void WriteStateTo(ObjectState state)
+    public override void WriteStateTo(ref ObjectState state)
     {
         state.Put(CurrentHealth);
         state.Put(MaxHealth);

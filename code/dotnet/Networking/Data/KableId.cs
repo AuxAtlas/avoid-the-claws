@@ -16,6 +16,8 @@ public readonly struct KableId : IEquatable<KableId>
     }
 
     public bool IsValid => Id != 0;
+    
+    public static readonly KableId Empty = new KableId(0);
 
     public override int GetHashCode()
     {

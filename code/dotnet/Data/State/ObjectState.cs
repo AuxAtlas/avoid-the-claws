@@ -12,12 +12,6 @@ public struct ObjectState : INetSerializable
     public KableConnectionId AuthorityConnectionId { get; set; }
     public uint NetworkTick { get; set; }
 
-    public Vector2 MoveInput { get; set; }
-    public Vector2 LookInput { get; set; }
-
-    public byte AttackInputsPacked;
-    public byte ActionInputsPacked;
-
     public List<byte> CustomBytes { get; set; } = [];
     public List<uint> CustomUInts { get; set; } = [];
     public List<float> CustomFloats { get; set; } = [];
@@ -30,13 +24,7 @@ public struct ObjectState : INetSerializable
 
     public ObjectState()
     {
-        AttackInputsPacked = 0;
-        ActionInputsPacked = 0;
-        ObjectId = default;
-        AuthorityConnectionId = default;
-        NetworkTick = 0;
-        MoveInput = default;
-        LookInput = default;
+        Reset();
     }
 
     public void Serialize(NetDataWriter writer)
@@ -44,11 +32,6 @@ public struct ObjectState : INetSerializable
         writer.Put(ObjectId);
         writer.Put(AuthorityConnectionId);
         writer.Put(NetworkTick);
-
-        writer.Put(MoveInput);
-        writer.Put(LookInput);
-        writer.Put(AttackInputsPacked);
-        writer.Put(ActionInputsPacked);
 
         writer.PutBytesWithLength(CustomBytes.ToArray());
         writer.PutArray(CustomUInts.ToArray());
@@ -61,11 +44,6 @@ public struct ObjectState : INetSerializable
         ObjectId = reader.GetKableId();
         AuthorityConnectionId = reader.GetKableConnectionId();
         NetworkTick = reader.GetUInt();
-
-        MoveInput = reader.GetVector2();
-        LookInput = reader.GetVector2();
-        AttackInputsPacked = reader.GetByte();
-        ActionInputsPacked = reader.GetByte();
 
         ResetCustoms();
 
@@ -86,6 +64,14 @@ public struct ObjectState : INetSerializable
         uintReadPos = 0;
         floatReadPos = 0;
         vectorReadPos = 0;
+    }
+
+    private void Reset()
+    {
+        ObjectId = KableId.Empty;
+        AuthorityConnectionId = KableConnectionId.Empty;
+        NetworkTick = 0;
+        ResetCustoms();
     }
 
     public void Put(byte val)
