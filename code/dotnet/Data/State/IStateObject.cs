@@ -9,6 +9,6 @@ public interface IStateObject
     public uint SpawnedOnTick { get; }
 
     public void KableSetup(KableId kableId);
-    public void ReadStateFrom(ref ObjectState state);
-    public void WriteStateTo(ref ObjectState state);
+    public void ReadStateFrom(ObjectState state);
+    public void WriteStateTo(ObjectState state);
 }

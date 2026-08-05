@@ -55,12 +55,12 @@ public partial class AudioPlayerComponent : BaseComponent
         _audioPlayer.Play();
     }
 
-    public override void ReadStateFrom(ref ObjectState state)
+    public override void ReadStateFrom(ObjectState state)
     {
         
     }
 
-    public override void WriteStateTo(ref ObjectState state)
+    public override void WriteStateTo(ObjectState state)
     {
         
     }

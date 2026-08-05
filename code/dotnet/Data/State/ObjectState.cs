@@ -6,26 +6,21 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Data.State;
 
-public struct ObjectState : INetSerializable
+public class ObjectState : INetSerializable
 {
     public KableId ObjectId { get; set; }
     public KableConnectionId AuthorityConnectionId { get; set; }
     public uint NetworkTick { get; set; }
 
-    public List<byte> CustomBytes { get; set; } = [];
-    public List<uint> CustomUInts { get; set; } = [];
-    public List<float> CustomFloats { get; set; } = [];
-    public List<Vector3> CustomVectors { get; set; } = [];
+    public List<byte> CustomBytes { get; } = [];
+    public List<uint> CustomUInts { get; } = [];
+    public List<float> CustomFloats { get; } = [];
+    public List<Vector3> CustomVectors { get; } = [];
 
-    private int byteReadPos = 0;
-    private int uintReadPos = 0;
-    private int floatReadPos = 0;
-    private int vectorReadPos = 0;
-
-    public ObjectState()
-    {
-        Reset();
-    }
+    private int byteReadPos;
+    private int uintReadPos;
+    private int floatReadPos;
+    private int vectorReadPos;
 
     public void Serialize(NetDataWriter writer)
     {
@@ -64,14 +59,6 @@ public struct ObjectState : INetSerializable
         uintReadPos = 0;
         floatReadPos = 0;
         vectorReadPos = 0;
-    }
-
-    private void Reset()
-    {
-        ObjectId = KableId.Empty;
-        AuthorityConnectionId = KableConnectionId.Empty;
-        NetworkTick = 0;
-        ResetCustoms();
     }
 
     public void Put(byte val)

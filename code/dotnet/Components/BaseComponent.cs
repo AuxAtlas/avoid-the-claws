@@ -18,12 +18,12 @@ public partial class BaseComponent : Node3D, IComponent
         KableId = kableId;
     }
 
-    public virtual void ReadStateFrom(ref ObjectState state)
+    public virtual void ReadStateFrom(ObjectState state)
     {
         
     }
 
-    public virtual void WriteStateTo(ref ObjectState state)
+    public virtual void WriteStateTo(ObjectState state)
     {
         
     }

@@ -11,7 +11,7 @@ public class SpawnActorPacket : IGamePacket
     public KableConnectionId AuthorityConnectionId { get; set; }
     public CoreGame.ActorType Type { get; set; }
 
-    public ObjectState State { get; set; }
+    public ObjectState State { get; set; } = new();
 
     public void Serialize(NetDataWriter writer)
     {
@@ -26,6 +26,6 @@ public class SpawnActorPacket : IGamePacket
         ActorId = reader.GetKableId();
         AuthorityConnectionId = reader.GetKableConnectionId();
         Type = (CoreGame.ActorType)reader.GetByte();
-        State = reader.Get<ObjectState>();
+        State.Deserialize(reader);
     }
 }

@@ -42,7 +42,7 @@ public partial class HealthComponent : BaseComponent
         Revive();
     }
 
-    public override void ReadStateFrom(ref ObjectState state)
+    public override void ReadStateFrom(ObjectState state)
     {
         var oldHealth = CurrentHealth;
         CurrentHealth = state.ReadFloat();
@@ -72,7 +72,7 @@ public partial class HealthComponent : BaseComponent
         }
     }
 
-    public override void WriteStateTo(ref ObjectState state)
+    public override void WriteStateTo(ObjectState state)
     {
         state.Put(CurrentHealth);
         state.Put(MaxHealth);
