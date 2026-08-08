@@ -1,12 +1,22 @@
+#region
+
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using AvoidClaws.code.dotnet.Networking.Data;
 using Godot;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
+#endregion
+
 namespace AvoidClaws.code.dotnet.Extensions;
 
 public static class NetworkExtensions
 {
+    static private readonly List<float> _xValuesBuffer = new();
+    static private readonly List<float> _yValuesBuffer = new();
+    static private readonly List<float> _zValuesBuffer = new();
+
     extension(byte b)
     {
         /// <summary>
@@ -93,37 +103,35 @@ public static class NetworkExtensions
         {
             values ??= [];
 
-            var xValues = new float[values.Length];
-            var yValues = new float[values.Length];
-
+            _xValuesBuffer.Clear();
+            _yValuesBuffer.Clear();
             for (var i = 0; i < values.Length; i++)
             {
-                xValues[i] = values[i].X;
-                yValues[i] = values[i].Y;
+                _xValuesBuffer[i] = values[i].X;
+                _yValuesBuffer[i] = values[i].Y;
             }
 
-            writer.PutArray(xValues);
-            writer.PutArray(yValues);
+            writer.PutSpan(CollectionsMarshal.AsSpan(_xValuesBuffer));
+            writer.PutSpan(CollectionsMarshal.AsSpan(_yValuesBuffer));
         }
 
         public void PutArray(Vector3[]? values)
         {
             values ??= [];
 
-            var xValues = new float[values.Length];
-            var yValues = new float[values.Length];
-            var zValues = new float[values.Length];
-
+            _xValuesBuffer.Clear();
+            _yValuesBuffer.Clear();
+            _zValuesBuffer.Clear();
             for (var i = 0; i < values.Length; i++)
             {
-                xValues[i] = values[i].X;
-                yValues[i] = values[i].Y;
-                zValues[i] = values[i].Z;
+                _xValuesBuffer[i] = values[i].X;
+                _yValuesBuffer[i] = values[i].Y;
+                _zValuesBuffer[i] = values[i].Z;
             }
 
-            writer.PutArray(xValues);
-            writer.PutArray(yValues);
-            writer.PutArray(zValues);
+            writer.PutSpan(CollectionsMarshal.AsSpan(_xValuesBuffer));
+            writer.PutSpan(CollectionsMarshal.AsSpan(_yValuesBuffer));
+            writer.PutSpan(CollectionsMarshal.AsSpan(_zValuesBuffer));
         }
     }
 
@@ -131,54 +139,43 @@ public static class NetworkExtensions
     {
         public Vector2 GetVector2()
         {
-            Vector2 v;
-            v.X = reader.GetFloat();
-            v.Y = reader.GetFloat();
-            return v;
+            var x = reader.GetFloat();
+            var y = reader.GetFloat();
+            return new Vector2(x, y);
         }
 
-        public Vector2[] GetVector2Array()
+        /// <summary>
+        /// Reads an array of Vector2 into the given List 'v'
+        /// </summary>
+        public void ReadVector2ArrayInto(List<Vector2> v)
         {
             var xValues = reader.GetFloatArray();
             var yValues = reader.GetFloatArray();
 
-            var v = new Vector2[xValues.Length];
-            for (var i = 0; i < v.Length; i++) v[i] = new Vector2(xValues[i], yValues[i]);
-
-            return v;
+            for (var i = 0; i < xValues.Length; i++)
+            {
+                v.Add(new Vector2(xValues[i], yValues[i]));
+            }
         }
 
         public Vector3 GetVector3()
         {
-            Vector3 v;
-            v.X = reader.GetFloat();
-            v.Y = reader.GetFloat();
-            v.Z = reader.GetFloat();
-            return v;
+            var x = reader.GetFloat();
+            var y = reader.GetFloat();
+            var z = reader.GetFloat();
+            return new Vector3(x, y, z);
         }
 
-        public Vector3[] GetVector3Array()
+        public void ReadVector3ArrayInto(List<Vector3> v)
         {
             var xValues = reader.GetFloatArray();
             var yValues = reader.GetFloatArray();
             var zValues = reader.GetFloatArray();
 
-            var v = new Vector3[xValues.Length];
-            for (var i = 0; i < v.Length; i++) v[i] = new Vector3(xValues[i], yValues[i], zValues[i]);
-
-            return v;
-        }
-
-        public KableId GetKableId()
-        {
-            var id = reader.GetUInt();
-            return new KableId(id);
-        }
-
-        public KableConnectionId GetKableConnectionId()
-        {
-            var id = reader.GetUInt();
-            return new KableConnectionId(id);
+            for (var i = 0; i < xValues.Length; i++)
+            {
+                v.Add(new Vector3(xValues[i], yValues[i], zValues[i]));
+            }
         }
     }
 

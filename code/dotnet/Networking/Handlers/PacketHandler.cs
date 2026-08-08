@@ -1,6 +1,10 @@
+#region
+
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets;
 using AvoidClaws.code.dotnet.Services;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Handlers;
 

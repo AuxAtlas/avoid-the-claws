@@ -1,31 +1,34 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using AvoidClaws.code.dotnet.Events.Lifecycle;
+using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Events.Networking;
 using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets;
-using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Networking.Packets.State;
 using AvoidClaws.code.dotnet.Services;
 using Godot;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
+#endregion
+
 namespace AvoidClaws.code.dotnet.Glue.Managers;
 
 public partial class NetworkManager : Node, IService
 {
-    public const uint NETWORK_TICKS_PER_SECOND = 60;
-    public const double MAX_SLEW_ADJUST = 0.002d;
-    public const uint MAX_TICK_SEQUENCE = 256;
-    public const int DESIRED_TICKS_BUFFER = 3;
+    private const uint NetworkTicksPerSecond = 60;
+    private const double MaxSlewAdjust = 0.002d;
+    public const uint MaxTickSequence = 512;
+    private const int DesiredTicksBuffer = 3;
 
-    public static double TickDeltaTime => 1d / NETWORK_TICKS_PER_SECOND;
-    public static float TickDeltaTimeF => 1f / NETWORK_TICKS_PER_SECOND;
+    public static double TickDeltaTime => 1d / NetworkTicksPerSecond;
+    public static float TickDeltaTimeF => 1f / NetworkTicksPerSecond;
 
     private readonly NetDataWriter _cachedNetWriter = new();
     private readonly Dictionary<KableConnectionId, KableConnection> _kablePeers = new();
@@ -59,7 +62,7 @@ public partial class NetworkManager : Node, IService
     public bool IsServer { get; private set; }
 
 
-    public uint NetworkTick { get; private set; }
+    private uint _networkTick;
     private double _networkTimeScaler = 1d;
 
     public override void _Ready()
@@ -102,7 +105,7 @@ public partial class NetworkManager : Node, IService
         _netManager?.DisconnectAll();
         _netManager?.Stop();
         _kablePeers.Clear();
-        NetworkTick = 0;
+        _networkTick = 0;
         IsServer = false;
         MyConnectionId = KableConnectionId.Empty;
     }
@@ -121,17 +124,19 @@ public partial class NetworkManager : Node, IService
         Core.World.GotoMainMenu();
     }
 
-    public NetworkState GetState()
+    public NetworkState GetCurrentState()
     {
         NetworkState state = new()
         {
-            NetworkTick = NetworkTick,
+            NetworkTick = _networkTick,
             FinishedInitialSync = true
         };
 
-        foreach (var actor in Core.World.Actors.SpawnedActors) state.ObjectStates.Add(actor.GetCurrentState());
+        foreach (var actor in Core.World.Actors.SpawnedActors)
+            state.ObjectStates.Add(actor.GetCurrentState(_networkTick));
 
-        foreach (var controller in Core.World.Controllers.SpawnedControllers) state.ObjectStates.Add(controller.GetCurrentState());
+        foreach (var controller in Core.World.Controllers.SpawnedControllers)
+            state.ObjectStates.Add(controller.GetCurrentState(_networkTick));
 
         if (IsServer)
             state.ServerKableId = new KableConnectionId(MyConnectionId.Id);
@@ -146,15 +151,32 @@ public partial class NetworkManager : Node, IService
 
     public NetworkState GetStateOrCached()
     {
-        if (_cachedNetworkState.HasValue && _cachedNetworkState.Value.NetworkTick == NetworkTick) return _cachedNetworkState.Value;
+        if (_cachedNetworkState.HasValue && _cachedNetworkState.Value.NetworkTick == _networkTick)
+            return _cachedNetworkState.Value;
 
-        _cachedNetworkState = GetState();
+        _cachedNetworkState = GetCurrentState();
         return _cachedNetworkState.Value;
     }
 
-    public void SetState(NetworkState state)
+    public void IngestNetworkState(NetworkState state)
     {
-        NetworkTick = state.NetworkTick;
+        var needsReconciliation = false;
+        foreach (var subObjectState in state.ObjectStates)
+        {
+            var gameObject = Core.World.GetGameObject(subObjectState.ObjectId);
+            if (gameObject is not LivingActor livingActor)
+                continue;
+            if (livingActor.CheckNeedsNetReconciliation(subObjectState))
+            {
+                needsReconciliation = true;
+                break;
+            }
+        }
+
+        if (needsReconciliation)
+        {
+            ProcessNetReconciliation(state);
+        }
 
         foreach (var objectState in state.ObjectStates)
         {
@@ -163,13 +185,32 @@ public partial class NetworkManager : Node, IService
             tmpKableObject?.IngestNetworkState(objectState);
         }
 
-        SetStateCustom(ref state);
+        _lastReceivedNetworkState = state;
     }
 
-    public void IngestNetworkState(NetworkState state)
+    private void ProcessNetReconciliation(NetworkState state)
     {
-        SetState(state);
-        _lastReceivedNetworkState = state;
+        var referenceTick = state.NetworkTick;
+        var processingTick = referenceTick;
+
+        foreach (var gameObject in Core.World.GameObjects)
+        {
+            gameObject.RewindToTick(referenceTick);
+        }
+
+        while (processingTick < _networkTick)
+        {
+            Core.World.ProcessNetTick(processingTick);
+            foreach (var actor in Core.World.Actors.SpawnedActors)
+            {
+                if (actor is PhysicsBody3D physicsBody3D)
+                {
+                    physicsBody3D.ForceUpdateTransform();
+                }
+            }
+
+            processingTick++;
+        }
     }
 
     protected virtual void SetStateCustom(ref NetworkState state)
@@ -201,7 +242,7 @@ public partial class NetworkManager : Node, IService
     {
         if (IsServer)
             return;
-        
+
         Reset();
         Core.CriticalError($"NetworkManager: Networking error: {socketError}");
     }
@@ -221,12 +262,8 @@ public partial class NetworkManager : Node, IService
 
         _kablePeers.Remove(foundConnection.ConnectionId);
 
-        var foundOwned = Core.World.GetAllOwnedBy(foundConnection);
-        if (foundOwned.Count == 0)
-            return;
-
-        foreach (var kableObject in foundOwned)
-            Core.World.DestroyObject(kableObject.KableId);
+        foreach (var gameObject in Core.World.GetAllOwnedBy(foundConnection))
+            Core.World.DestroyObject(gameObject.KableId);
     }
 
     private void HandleNetworkLatencyUpdate(NetPeer peer, int latency)
@@ -260,22 +297,8 @@ public partial class NetworkManager : Node, IService
         (
             new NetPlayerJoinedEvent
             {
-                JoinedNetTick = NetworkTick,
+                JoinedNetTick = _networkTick,
                 KableConnectionId = connection.ConnectionId
-            }
-        );
-    }
-
-    private void HandleObjectDespawnedEvent(GameObjectDespawnedEvent e, KableConnection? source)
-    {
-        if (IsClient)
-            return;
-
-        SendToAllReliableOrdered
-        (
-            new DestroyObjectPacket
-            {
-                TargetObjectId = e.GameObject.KableId
             }
         );
     }
@@ -292,8 +315,8 @@ public partial class NetworkManager : Node, IService
         while (_deltaSinceLastNetTick >= TickDeltaTime)
         {
             _deltaSinceLastNetTick -= TickDeltaTime;
-            NetworkTick++;
-            Core.ProcessNetTick(NetworkTick);
+            _networkTick++;
+            Core.ProcessNetTick(_networkTick);
         }
     }
 
@@ -306,17 +329,17 @@ public partial class NetworkManager : Node, IService
         if (!_lastReceivedNetworkState.HasValue)
             return;
 
-        long currentOffset = NetworkTick - _lastReceivedNetworkState.Value.NetworkTick;
+        long currentOffset = _networkTick - _lastReceivedNetworkState.Value.NetworkTick;
 
-        var offsetError = (int)Math.Clamp(currentOffset - DESIRED_TICKS_BUFFER, int.MinValue, int.MaxValue);
+        var offsetError = (int)Math.Clamp(currentOffset - DesiredTicksBuffer, int.MinValue, int.MaxValue);
 
-        var adjustment = Math.Clamp(offsetError * 0.01d, -MAX_SLEW_ADJUST, MAX_SLEW_ADJUST);
+        var adjustment = Math.Clamp(offsetError * 0.01d, -MaxSlewAdjust, MaxSlewAdjust);
         _networkTimeScaler = 1.0d - adjustment;
 
-        if (Math.Abs(offsetError) > NETWORK_TICKS_PER_SECOND)
+        if (Math.Abs(offsetError) > NetworkTicksPerSecond)
         {
             GD.PushWarning("Massive desync detected. Hard resetting clock.");
-            NetworkTick = _lastReceivedNetworkState.Value.NetworkTick + DESIRED_TICKS_BUFFER;
+            _networkTick = _lastReceivedNetworkState.Value.NetworkTick + DesiredTicksBuffer;
         }
     }
 
@@ -350,7 +373,7 @@ public partial class NetworkManager : Node, IService
 
         Core.World.ChangeMapTo(Core.Resources.MapPrefabs.DevEnvMap);
         var kableConnectionId = Core.GenerateRawKableId();
-        MyConnectionId = new KableConnectionId();
+        MyConnectionId = new KableConnectionId(0);
         GD.Print($"Server KableConnectionId: {MyConnectionId}");
 
 
@@ -375,7 +398,7 @@ public partial class NetworkManager : Node, IService
         (
             new NetPlayerJoinedEvent
             {
-                JoinedNetTick = NetworkTick,
+                JoinedNetTick = _networkTick,
                 KableConnectionId = MyConnectionId
             }
         );

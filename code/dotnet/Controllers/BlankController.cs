@@ -1,3 +1,5 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -7,6 +9,8 @@ using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Controllers;
 
@@ -19,24 +23,25 @@ public partial class BlankController : Node, IController
     public CoreGame Core { get; } = null!;
 
     private List<IActor> _attachedActors = new();
-    
+
     public KableId KableId { get; private set; }
     public KableConnectionId AuthorityConnectionId { get; private set; }
     public uint SpawnedOnTick { get; private set; }
     private byte _attackInputsPacked;
     private byte _actionInputsPacked;
-    protected ObjectState[] StateHistory = new ObjectState[NetworkManager.MAX_TICK_SEQUENCE];
-    protected ActorInput Inputs;
+    protected ObjectState[] _stateHistory = new ObjectState[NetworkManager.MaxTickSequence];
+    protected ControllerInputs Inputs;
 
     public bool ReconciliationMode { get; private set; } = false;
-    public uint CurrentTick => Core.Network.NetworkTick;
     public float TickDeltaTimeF => NetworkManager.TickDeltaTimeF;
     public bool Destroyed => IsQueuedForDeletion();
     protected bool IsClient => Core.Network.IsClient;
     protected bool IsServer => Core.Network.IsServer;
 
     private StringBuilder _debugStringBuilder = new(100);
-    
+
+    private readonly ObjectState _stateCache = new();
+
     public void KableSetup(KableId connectionId)
     {
         KableId = connectionId;
@@ -47,21 +52,19 @@ public partial class BlankController : Node, IController
         AuthorityConnectionId = connectionId;
     }
 
-    public ObjectState GetCurrentState()
+    public ObjectState GetCurrentState(uint currentTick)
     {
-        var state = new ObjectState
-        {
-            NetworkTick = CurrentTick,
-            ObjectId = KableId,
-            AuthorityConnectionId = AuthorityConnectionId
-        };
+        _stateCache.ResetCustoms();
+        _stateCache.NetworkTick = currentTick;
+        _stateCache.ObjectId = KableId;
+        _stateCache.AuthorityConnectionId = AuthorityConnectionId;
 
-        state.Put(Inputs.MoveInput);
-        state.Put(Inputs.LookInput);
-        state.Put(Inputs.AttackInputsPacked);
-        state.Put(Inputs.ActionInputsPacked);
+        _stateCache.Put(Inputs.MoveInput);
+        _stateCache.Put(Inputs.LookInput);
+        _stateCache.Put(Inputs.AttackInputsPacked);
+        _stateCache.Put(Inputs.ActionInputsPacked);
 
-        return state;
+        return _stateCache;
     }
 
     public void SetCurrentState(ObjectState state)
@@ -79,7 +82,23 @@ public partial class BlankController : Node, IController
         if (IsServer)
             throw new InvalidOperationException();
 
-        StateHistory[state.NetworkTick % NetworkManager.MAX_TICK_SEQUENCE] = state;
+        _stateHistory[state.NetworkTick % NetworkManager.MaxTickSequence] = state;
+    }
+
+    public ObjectState GetHistoricState(uint targetTick)
+    {
+        return _stateHistory[targetTick % NetworkManager.MaxTickSequence];
+    }
+
+    public void RewindToTick(uint targetTick)
+    {
+        SetCurrentState(GetHistoricState(targetTick));
+    }
+
+    public void HandleReconciliationUntilTick(uint targetTick)
+    {
+        // TODO: Implement
+        throw new NotImplementedException();
     }
 
     public void ResetInputs()
@@ -91,11 +110,12 @@ public partial class BlankController : Node, IController
     }
 
     public virtual void Setup()
-    { }
-
-    public void Start()
     {
-        SpawnedOnTick = CurrentTick;
+    }
+
+    public void Start(uint startTick)
+    {
+        SpawnedOnTick = startTick;
     }
 
     public void HandleNetTick(uint tick)
@@ -109,7 +129,7 @@ public partial class BlankController : Node, IController
 
         if (IsServer)
         {
-            StateHistory[tick % NetworkManager.MAX_TICK_SEQUENCE] = GetCurrentState();
+            _stateHistory[tick % NetworkManager.MaxTickSequence] = GetCurrentState(tick);
         }
     }
 
@@ -133,7 +153,7 @@ public partial class BlankController : Node, IController
     {
         return _attachedActors.AsReadOnly();
     }
-    
+
     public bool IsLogicAuthority()
     {
         return AuthorityConnectionId == Core.Network.MyConnectionId;
@@ -154,7 +174,7 @@ public partial class BlankController : Node, IController
 
         return _debugStringBuilder.ToString();
     }
-    
+
 #region EMPTY VIRTUAL METHODS
 
     protected virtual void HandleNetTickCustom(uint tick)
@@ -164,17 +184,17 @@ public partial class BlankController : Node, IController
     {
     }
 
-    protected virtual void ProcessInputCustom(float deltaTimeF, ActorInput input)
+    protected virtual void ProcessInputCustom(float deltaTimeF, ControllerInputs input)
     {
     }
 
-    protected virtual void SetInputCustom(ActorInput input)
+    protected virtual void SetInputCustom(ControllerInputs input)
     {
     }
 
-    protected virtual void GetInputCustom(ActorInput input)
+    protected virtual void GetInputCustom(ControllerInputs input)
     {
     }
-    
+
 #endregion
 }

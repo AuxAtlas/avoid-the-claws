@@ -1,5 +1,9 @@
+#region
+
 using System;
 using System.Text;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Util;
 

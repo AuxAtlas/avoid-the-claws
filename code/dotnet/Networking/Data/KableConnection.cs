@@ -1,6 +1,9 @@
-using AvoidClaws.code.dotnet.Data.State;
+#region
+
 using LiteNetLib;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Data;
 
@@ -12,28 +15,7 @@ public class KableConnection(NetPeer? netPeer, KableId kableId) : IKableObject
     public KableConnectionId AuthorityConnectionId => ConnectionId;
     public KableConnectionId ConnectionId { get; private set; } = new(kableId.Id);
 
-
     public bool ReconciliationMode => false;
-
-    public ObjectState GetCurrentState()
-    {
-        var state = new ObjectState
-        {
-            NetworkTick = 0,
-            ObjectId = KableId,
-            AuthorityConnectionId = AuthorityConnectionId
-        };
-
-        return state;
-    }
-
-    public void SetCurrentState(ObjectState state)
-    {
-    }
-
-    public void IngestNetworkState(ObjectState state)
-    {
-    }
 
     public uint SpawnedOnTick { get; }
 
@@ -43,14 +25,6 @@ public class KableConnection(NetPeer? netPeer, KableId kableId) : IKableObject
     }
 
     public void KableSetup(KableId kableId)
-    {
-    }
-
-    public void SetKableAuthority(KableConnectionId connectionId)
-    {
-    }
-
-    public virtual void RewindToTick(uint rewindTick)
     {
     }
 

@@ -1,8 +1,9 @@
+#region
+
 using System.Collections.Generic;
-using AvoidClaws.code.dotnet.Actors;
-using AvoidClaws.code.dotnet.Data.State;
-using AvoidClaws.code.dotnet.Networking.Data;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Components.Core;
 
@@ -19,7 +20,7 @@ public partial class AudioPlayerComponent : BaseComponent
             UpdateConfigurationWarnings();
         }
     }
-    
+
     private AudioStreamPlayer3D? _audioPlayer;
 
     public override void SetupComponent()
@@ -53,15 +54,5 @@ public partial class AudioPlayerComponent : BaseComponent
         _audioPlayer.PitchScale = pitch;
         _audioPlayer.Stream = audio;
         _audioPlayer.Play();
-    }
-
-    public override void ReadStateFrom(ObjectState state)
-    {
-        
-    }
-
-    public override void WriteStateTo(ObjectState state)
-    {
-        
     }
 }

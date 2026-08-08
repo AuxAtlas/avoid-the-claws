@@ -1,5 +1,9 @@
+#region
+
 using AvoidClaws.code.dotnet.Networking.Data;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.State;
 

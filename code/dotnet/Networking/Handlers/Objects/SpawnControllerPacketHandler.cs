@@ -1,7 +1,11 @@
+#region
+
 using System.Linq;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Handlers.Objects;
 

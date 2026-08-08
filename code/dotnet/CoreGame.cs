@@ -1,3 +1,5 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using AvoidClaws.code.dotnet.Data;
@@ -9,11 +11,14 @@ using AvoidClaws.code.dotnet.Services;
 using Godot;
 using GameWorld = AvoidClaws.code.dotnet.World.GameWorld;
 
+#endregion
+
 namespace AvoidClaws.code.dotnet;
 
 public partial class CoreGame : Node, IService
 {
     #region ENUMS
+
     public enum ActorType : ushort
     {
         Player,
@@ -36,6 +41,7 @@ public partial class CoreGame : Node, IService
     #endregion
 
     #region INJECTIONS
+
     [Inject]
     public EventBus EventBus { get; } = null!;
 

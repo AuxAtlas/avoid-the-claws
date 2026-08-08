@@ -1,7 +1,10 @@
+#region
+
 using AvoidClaws.code.dotnet.Data.State;
-using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Networking.Data;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
 
@@ -23,8 +26,8 @@ public class SpawnActorPacket : IGamePacket
 
     public void Deserialize(NetDataReader reader)
     {
-        ActorId = reader.GetKableId();
-        AuthorityConnectionId = reader.GetKableConnectionId();
+        ActorId.SetKableId(reader.GetUInt());
+        AuthorityConnectionId.SetKableConnectionId(reader.GetUInt());
         Type = (CoreGame.ActorType)reader.GetByte();
         State.Deserialize(reader);
     }

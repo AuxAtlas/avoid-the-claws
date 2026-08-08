@@ -1,4 +1,8 @@
+#region
+
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Screens.Screens;
 

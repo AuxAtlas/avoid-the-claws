@@ -7,19 +7,19 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <Content Include=".gitignore" />
-        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\.gitignore" />
-        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\.name" />
-        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\encodings.xml" />
-        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\indexLayout.xml" />
-        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\projectSettingsUpdater.xml" />
-        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\workspace.xml" />
-        <Content Include="code\dotnet\AvoidClaws.sln" />
+        <Content Include=".gitignore"/>
+        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\.gitignore"/>
+        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\.name"/>
+        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\encodings.xml"/>
+        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\indexLayout.xml"/>
+        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\projectSettingsUpdater.xml"/>
+        <Content Include="code\dotnet\.idea\.idea.AvoidClaws\.idea\workspace.xml"/>
+        <Content Include="code\dotnet\AvoidClaws.sln"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="LiteNetLib" Version="2.1.4" />
+        <PackageReference Include="LiteNetLib" Version="2.1.4"/>
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="code\dotnet\Events\UI\" />
+        <Folder Include="code\dotnet\Events\UI\"/>
     </ItemGroup>
 </Project>

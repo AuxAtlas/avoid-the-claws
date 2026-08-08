@@ -1,5 +1,6 @@
+#region
+
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Controllers;
@@ -9,6 +10,8 @@ using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
 using AvoidClaws.code.dotnet.World.Managers;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.World;
 
@@ -28,7 +31,9 @@ public partial class GameWorld : Node, IService
 
     [Inject]
     protected CoreGame Core { get; } = null!;
-    
+
+    public IEnumerable<IGameObject> GameObjects => Actors.SpawnedActors.Concat<IGameObject>(Controllers.SpawnedControllers);
+
     public override void _EnterTree()
     {
         base._EnterTree();
@@ -87,7 +92,7 @@ public partial class GameWorld : Node, IService
 
         found ??= (T?)Actors.GetActor(kableId);
         found ??= (T?)Controllers.GetController(kableId);
-        
+
         return found;
     }
 
@@ -193,12 +198,8 @@ public partial class GameWorld : Node, IService
         return currentList;
     }
 
-    public ReadOnlyCollection<IKableObject> GetAllOwnedBy(KableConnection owner)
+    public IEnumerable<IGameObject> GetAllOwnedBy(KableConnection owner)
     {
-        List<IKableObject> currentList = new();
-        currentList.AddRange(Actors.SpawnedActors);
-        currentList.AddRange(Controllers.SpawnedControllers);
-
-        return currentList.Where(x => x.AuthorityConnectionId == owner.ConnectionId).ToList().AsReadOnly();
+        return GameObjects.Where(x => x.AuthorityConnectionId == owner.ConnectionId).ToList().AsReadOnly();
     }
 }

@@ -1,6 +1,8 @@
+#region
+
 using AvoidClaws.code.dotnet.Controllers;
-using Godot;
-using GameWorld = AvoidClaws.code.dotnet.World.GameWorld;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 

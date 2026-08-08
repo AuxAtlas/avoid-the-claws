@@ -1,6 +1,9 @@
-using AvoidClaws.code.dotnet.Extensions;
+#region
+
 using AvoidClaws.code.dotnet.Networking.Data;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
 
@@ -15,6 +18,6 @@ public class DestroyObjectPacket : IGamePacket
 
     public void Deserialize(NetDataReader reader)
     {
-        TargetObjectId = reader.GetKableId();
+        TargetObjectId.SetKableId(reader.GetUInt());
     }
 }

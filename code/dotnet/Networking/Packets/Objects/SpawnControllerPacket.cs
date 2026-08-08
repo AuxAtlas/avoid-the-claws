@@ -1,6 +1,9 @@
-using AvoidClaws.code.dotnet.Extensions;
+#region
+
 using AvoidClaws.code.dotnet.Networking.Data;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
 
@@ -19,8 +22,8 @@ public class SpawnControllerPacket : IGamePacket
 
     public void Deserialize(NetDataReader reader)
     {
-        SpawnedObjectId = reader.GetKableId();
-        AuthorityConnectionId = reader.GetKableConnectionId();
+        SpawnedObjectId.SetKableId(reader.GetUInt());
+        AuthorityConnectionId.SetKableConnectionId(reader.GetUInt());
         Type = (CoreGame.ControllerType)reader.GetByte();
     }
 }

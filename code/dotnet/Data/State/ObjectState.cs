@@ -1,21 +1,26 @@
+#region
+
+using System;
 using System.Collections.Generic;
 using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Networking.Data;
 using Godot;
 using LiteNetLib.Utils;
 
+#endregion
+
 namespace AvoidClaws.code.dotnet.Data.State;
 
-public class ObjectState : INetSerializable
+public class ObjectState : INetSerializable, IEquatable<ObjectState>
 {
-    public KableId ObjectId { get; set; }
-    public KableConnectionId AuthorityConnectionId { get; set; }
+    public KableId ObjectId { get; set; } = new(0);
+    public KableConnectionId AuthorityConnectionId { get; set; } = new(0);
     public uint NetworkTick { get; set; }
 
-    public List<byte> CustomBytes { get; } = [];
-    public List<uint> CustomUInts { get; } = [];
-    public List<float> CustomFloats { get; } = [];
-    public List<Vector3> CustomVectors { get; } = [];
+    private List<byte> CustomBytes { get; } = [];
+    private List<uint> CustomUInts { get; } = [];
+    private List<float> CustomFloats { get; } = [];
+    private List<Vector3> CustomVectors { get; } = [];
 
     private int byteReadPos;
     private int uintReadPos;
@@ -36,8 +41,8 @@ public class ObjectState : INetSerializable
 
     public void Deserialize(NetDataReader reader)
     {
-        ObjectId = reader.GetKableId();
-        AuthorityConnectionId = reader.GetKableConnectionId();
+        ObjectId.SetKableId(reader.GetUInt());
+        AuthorityConnectionId.SetKableConnectionId(reader.GetUInt());
         NetworkTick = reader.GetUInt();
 
         ResetCustoms();
@@ -45,10 +50,10 @@ public class ObjectState : INetSerializable
         CustomBytes.AddRange(reader.GetBytesWithLength());
         CustomUInts.AddRange(reader.GetUIntArray());
         CustomFloats.AddRange(reader.GetFloatArray());
-        CustomVectors.AddRange(reader.GetVector3Array());
+        reader.ReadVector3ArrayInto(CustomVectors);
     }
 
-    private void ResetCustoms()
+    public void ResetCustoms()
     {
         CustomBytes.Clear();
         CustomUInts.Clear();
@@ -110,5 +115,30 @@ public class ObjectState : INetSerializable
     public Vector2 ReadVector2()
     {
         return new Vector2(ReadFloat(), ReadFloat());
+    }
+
+    public bool Equals(ObjectState? other)
+    {
+        if (other is null)
+            return false;
+        if (ReferenceEquals(this, other))
+            return true;
+        return ObjectId.Equals(other.ObjectId) && NetworkTick == other.NetworkTick && CustomBytes.Equals(other.CustomBytes) && CustomUInts.Equals(other.CustomUInts) && CustomFloats.Equals(other.CustomFloats) && CustomVectors.Equals(other.CustomVectors);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is null)
+            return false;
+        if (ReferenceEquals(this, obj))
+            return true;
+        if (obj.GetType() != GetType())
+            return false;
+        return Equals((ObjectState)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(ObjectId, NetworkTick, CustomBytes, CustomUInts, CustomFloats, CustomVectors);
     }
 }

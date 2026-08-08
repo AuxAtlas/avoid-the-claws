@@ -1,8 +1,12 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using AvoidClaws.code.dotnet.Services;
 using AvoidClaws.code.dotnet.Util;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Events;
 

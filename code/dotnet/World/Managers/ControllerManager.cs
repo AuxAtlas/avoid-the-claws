@@ -1,3 +1,5 @@
+#region
+
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -6,6 +8,8 @@ using AvoidClaws.code.dotnet.Events.Lifecycle;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.World.Managers;
 
@@ -59,7 +63,7 @@ public partial class ControllerManager : Node, IService
 
         presetKableId ??= Core.GenerateKableId();
 
-        if (Core.World.GetGameObject(presetKableId.Value) != null)
+        if (Core.World.GetGameObject(presetKableId) != null)
         {
             GD.PrintErr("Level: Tried to spawn multiple KableObject with the same KableId!");
             return null;
@@ -73,12 +77,12 @@ public partial class ControllerManager : Node, IService
             return spawned;
         }
 
-        controller.KableSetup(presetKableId.Value);
+        controller.KableSetup(presetKableId);
         controller.SetKableAuthority(Core.Network.GetServerConnectionId());
 
         AddChild(spawned);
 
-        if (_spawnedControllers.TryAdd(presetKableId.Value, controller))
+        if (_spawnedControllers.TryAdd(presetKableId, controller))
             GD.Print($"Spawned controller: {presetKableId}");
 
         return spawned;

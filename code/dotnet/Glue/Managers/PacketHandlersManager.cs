@@ -1,3 +1,5 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,6 +12,8 @@ using AvoidClaws.code.dotnet.Util;
 using Godot;
 using LiteNetLib;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Glue.Managers;
 

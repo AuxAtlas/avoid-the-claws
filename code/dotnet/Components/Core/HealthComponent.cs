@@ -1,6 +1,9 @@
-using AvoidClaws.code.dotnet.Actors;
+#region
+
 using AvoidClaws.code.dotnet.Data.State;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Components.Core;
 
@@ -36,13 +39,15 @@ public partial class HealthComponent : BaseComponent
     public bool IsDamaged => CurrentHealth < MaxHealth;
     public bool IsDead { get; private set; }
 
+    private readonly ObjectState _stateCache = new();
+
 
     public override void SetupComponent()
     {
         Revive();
     }
 
-    public override void ReadStateFrom(ObjectState state)
+    public override void SetCurrentState(ObjectState state)
     {
         var oldHealth = CurrentHealth;
         CurrentHealth = state.ReadFloat();
@@ -72,11 +77,13 @@ public partial class HealthComponent : BaseComponent
         }
     }
 
-    public override void WriteStateTo(ObjectState state)
+    public override ObjectState GetCurrentState(uint currentTick)
     {
-        state.Put(CurrentHealth);
-        state.Put(MaxHealth);
-        state.Put(IsDead ? (byte)1 : (byte)0);
+        _stateCache.ResetCustoms();
+        _stateCache.Put(CurrentHealth);
+        _stateCache.Put(MaxHealth);
+        _stateCache.Put(IsDead ? (byte)1 : (byte)0);
+        return _stateCache;
     }
 
     public void TakeDamage(float amount, bool suppressSoundEffect = false)

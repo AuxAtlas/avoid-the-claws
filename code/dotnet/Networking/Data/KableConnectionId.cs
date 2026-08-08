@@ -1,23 +1,25 @@
+#region
+
 using System;
+using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Data;
 
-public readonly struct KableConnectionId : IEquatable<KableConnectionId>
+public class KableConnectionId : INetSerializable, IEquatable<KableConnectionId>
 {
     public static readonly KableConnectionId Empty = new(0);
 
-    public uint Id { get; } = 0;
+    public uint Id { get; private set; }
+
+    public bool IsValid => Id != 0;
+
 
     public KableConnectionId(uint connectionId)
     {
         Id = connectionId;
     }
-
-    public KableConnectionId()
-    {
-    }
-
-    public bool IsValid => Id != 0;
 
     public override int GetHashCode()
     {
@@ -47,5 +49,18 @@ public readonly struct KableConnectionId : IEquatable<KableConnectionId>
     public override string ToString()
     {
         return Id.ToString();
+    }
+    public void Serialize(NetDataWriter writer)
+    {
+        writer.Put(Id);
+    }
+    public void Deserialize(NetDataReader reader)
+    {
+        Id = reader.GetUInt();
+    }
+
+    public void SetKableConnectionId(uint id)
+    {
+        Id = id;
     }
 }

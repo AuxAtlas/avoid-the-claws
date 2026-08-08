@@ -1,3 +1,5 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +8,8 @@ using AvoidClaws.code.dotnet.Buffs;
 using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Services;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Resources;
 

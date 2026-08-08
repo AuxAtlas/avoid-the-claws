@@ -1,4 +1,8 @@
+#region
+
 using AvoidClaws.code.dotnet.Networking.Data;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Events.Networking;
 

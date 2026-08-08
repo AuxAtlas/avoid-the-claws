@@ -1,6 +1,9 @@
-using AvoidClaws.code.dotnet.Extensions;
+#region
+
 using AvoidClaws.code.dotnet.Networking.Data;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
 
@@ -21,9 +24,9 @@ public class SpawnBuffPacket : IGamePacket
 
     public void Deserialize(NetDataReader reader)
     {
-        SpawnedBuffId = reader.GetKableId();
-        OwnerActorId = reader.GetKableId();
-        AuthorityConnectionId = reader.GetKableConnectionId();
+        SpawnedBuffId.SetKableId(reader.GetUInt());
+        OwnerActorId.SetKableId(reader.GetUInt());
+        AuthorityConnectionId.SetKableConnectionId(reader.GetUInt());
         BuffType = (CoreGame.BuffType)reader.GetByte();
     }
 }

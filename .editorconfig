@@ -1,0 +1,22 @@
+[*]
+
+# Microsoft .NET properties
+csharp_preferred_modifier_order = protected, public, override, internal, file, new, static, abstract, virtual, sealed, private, readonly, extern, unsafe, volatile, async, required:suggestion
+
+# ReSharper properties
+resharper_braces_redundant = false
+resharper_csharp_blank_lines_around_invocable = 0
+resharper_csharp_keep_blank_lines_in_declarations = 100
+resharper_csharp_max_line_length = 253
+resharper_csharp_wrap_after_invocation_lpar = true
+resharper_csharp_wrap_before_binary_opsign = true
+resharper_csharp_wrap_before_invocation_lpar = true
+resharper_csharp_wrap_before_invocation_rpar = true
+resharper_empty_string = string_empty
+resharper_indent_preprocessor_region = do_not_change
+resharper_instance_members_qualify_declared_in =
+resharper_parentheses_redundancy_style = remove
+resharper_place_accessorholder_attribute_on_same_line = false
+resharper_place_expr_accessor_on_single_line = true
+resharper_place_expr_property_on_single_line = true
+resharper_wrap_chained_binary_expressions = chop_if_long

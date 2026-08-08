@@ -1,5 +1,9 @@
+#region
+
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Glue;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Buffs;
 

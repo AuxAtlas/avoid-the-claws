@@ -1,6 +1,7 @@
+#region
+
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using AvoidClaws.code.dotnet.Buffs;
@@ -11,6 +12,8 @@ using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
 using Godot;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Actors;
 
@@ -64,12 +67,11 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     private ushort _ticksSinceStateSent;
 
     public bool IsDead => HealthComponent?.IsDead ?? false;
-    public uint CurrentTick => Core.Network.NetworkTick;
     public float TickDeltaTimeF => NetworkManager.TickDeltaTimeF;
     public bool Destroyed => IsQueuedForDeletion();
 
-    protected ObjectState[] StateHistory = new ObjectState[NetworkManager.MAX_TICK_SEQUENCE];
-    protected ActorInput Inputs;
+    private readonly ObjectState[] _stateHistory = new ObjectState[NetworkManager.MaxTickSequence];
+    protected ControllerInputs Inputs;
 
     protected readonly List<IComponent> Components = new();
     protected readonly List<IBuff> Buffs = new();
@@ -90,6 +92,8 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     protected bool IsServer => Core.Network.IsServer;
 
     private StringBuilder _debugStringBuilder = new(100);
+
+    private readonly ObjectState _stateCache = new();
 
     #endregion
 
@@ -114,9 +118,9 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         }
     }
 
-    public void Start()
+    public void Start(uint startTick)
     {
-        SpawnedOnTick = CurrentTick;
+        SpawnedOnTick = startTick;
     }
 
     public void Stop()
@@ -221,7 +225,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
         if (IsServer)
         {
-            StateHistory[tick % NetworkManager.MAX_TICK_SEQUENCE] = GetCurrentState();
+            _stateHistory[tick % NetworkManager.MaxTickSequence] = GetCurrentState(tick);
         }
 
         // TODO: Add Client2Server input sending
@@ -251,30 +255,27 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         throw new NotImplementedException();
     }
 
-    public ImmutableArray<IBuff> GetBuffs()
+    public IEnumerable<IBuff> GetBuffs()
     {
-        return Buffs.ToImmutableArray();
+        return Buffs.AsEnumerable();
     }
 
-    public ObjectState GetCurrentState()
+    public ObjectState GetCurrentState(uint currentTick)
     {
-        var state = new ObjectState
-        {
-            NetworkTick = CurrentTick,
-            ObjectId = KableId,
-            AuthorityConnectionId = AuthorityConnectionId
-        };
-        
-        state.Put(Position);
-        state.Put(Rotation);
-        state.Put(Velocity);
+        _stateCache.ResetCustoms();
+        _stateCache.AuthorityConnectionId = AuthorityConnectionId;
+        _stateCache.NetworkTick = currentTick;
 
-        state.Put(Inputs.MoveInput);
-        state.Put(Inputs.LookInput);
-        state.Put(Inputs.AttackInputsPacked);
-        state.Put(Inputs.ActionInputsPacked);
+        _stateCache.Put(Position);
+        _stateCache.Put(Rotation);
+        _stateCache.Put(Velocity);
 
-        return state;
+        _stateCache.Put(Inputs.MoveInput);
+        _stateCache.Put(Inputs.LookInput);
+        _stateCache.Put(Inputs.AttackInputsPacked);
+        _stateCache.Put(Inputs.ActionInputsPacked);
+
+        return _stateCache;
     }
 
     public void SetCurrentState(ObjectState state)
@@ -296,7 +297,23 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         if (IsServer)
             throw new InvalidOperationException();
 
-        StateHistory[state.NetworkTick % NetworkManager.MAX_TICK_SEQUENCE] = state;
+        _stateHistory[state.NetworkTick % NetworkManager.MaxTickSequence] = state;
+    }
+
+    public ObjectState GetHistoricState(uint targetTick)
+    {
+        return _stateHistory[targetTick % NetworkManager.MaxTickSequence];
+    }
+
+    public void RewindToTick(uint targetTick)
+    {
+        SetCurrentState(GetHistoricState(targetTick));
+    }
+
+    public void HandleReconciliationUntilTick(uint targetTick)
+    {
+        // TODO: Implement
+        throw new NotImplementedException();
     }
 
     public void ResetInputs()
@@ -339,7 +356,16 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         QueueFree();
     }
 
-    // TODO: Implement net reconciliation
+    public bool CheckNeedsNetReconciliation(ObjectState referenceState)
+    {
+        if (IsServer)
+            return false;
+
+        var referenceTick = referenceState.NetworkTick % NetworkManager.MaxTickSequence;
+        var historicState = GetHistoricState(referenceTick);
+
+        return historicState.Equals(referenceState);
+    }
 
     public override void _Process(double delta)
     {
@@ -417,15 +443,15 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     {
     }
 
-    protected virtual void ProcessInputCustom(float deltaTimeF, ActorInput input)
+    protected virtual void ProcessInputCustom(float deltaTimeF, ControllerInputs input)
     {
     }
 
-    protected virtual void SetInputCustom(ActorInput input)
+    protected virtual void SetInputCustom(ControllerInputs input)
     {
     }
 
-    protected virtual void GetInputCustom(ActorInput input)
+    protected virtual void GetInputCustom(ControllerInputs input)
     {
     }
 

@@ -1,9 +1,13 @@
+#region
+
 using System;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Events.Networking;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Networking.Packets.State;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Glue.Core.NetworkWorld;
 

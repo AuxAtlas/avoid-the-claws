@@ -1,6 +1,10 @@
+#region
+
 using System.Collections.Generic;
 using AvoidClaws.code.dotnet.Data.State;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Data;
 

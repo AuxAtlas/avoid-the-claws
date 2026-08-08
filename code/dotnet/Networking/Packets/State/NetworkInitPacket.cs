@@ -1,6 +1,9 @@
-using AvoidClaws.code.dotnet.Extensions;
+#region
+
 using AvoidClaws.code.dotnet.Networking.Data;
 using LiteNetLib.Utils;
+
+#endregion
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.State;
 
@@ -17,7 +20,7 @@ public class NetworkInitPacket : IGamePacket
 
     public void Deserialize(NetDataReader reader)
     {
-        AssignedConnectionId = reader.GetKableConnectionId();
-        ServerConnectionId = reader.GetKableConnectionId();
+        AssignedConnectionId.SetKableConnectionId(reader.GetUInt());
+        ServerConnectionId.SetKableConnectionId(reader.GetUInt());
     }
 }
