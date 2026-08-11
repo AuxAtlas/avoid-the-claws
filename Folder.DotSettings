@@ -75,4 +75,5 @@
   &amp;lt;Language id="yaml"&amp;gt;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
-&amp;lt;/profile&amp;gt;&lt;/RIDER_SETTINGS&gt;&lt;/Profile&gt;</s:String></wpf:ResourceDictionary>
+&amp;lt;/profile&amp;gt;&lt;/RIDER_SETTINGS&gt;&lt;/Profile&gt;</s:String>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Kable/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

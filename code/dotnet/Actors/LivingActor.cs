@@ -310,12 +310,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         SetCurrentState(GetHistoricState(targetTick));
     }
 
-    public void HandleReconciliationUntilTick(uint targetTick)
-    {
-        // TODO: Implement
-        throw new NotImplementedException();
-    }
-
     public void ResetInputs()
     {
         _moveInput = Vector2.Zero;

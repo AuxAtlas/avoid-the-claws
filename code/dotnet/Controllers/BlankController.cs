@@ -95,12 +95,6 @@ public partial class BlankController : Node, IController
         SetCurrentState(GetHistoricState(targetTick));
     }
 
-    public void HandleReconciliationUntilTick(uint targetTick)
-    {
-        // TODO: Implement
-        throw new NotImplementedException();
-    }
-
     public void ResetInputs()
     {
         Inputs.MoveInput = Vector2.Zero;

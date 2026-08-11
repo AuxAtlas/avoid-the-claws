@@ -29,7 +29,7 @@ project/solution_directory="code/dotnet/"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/advanced_model_import/plugin.cfg")
+enabled=PackedStringArray()
 
 [importer_defaults]
 
@@ -68,7 +68,7 @@ scene={
 
 [physics]
 
-3d/physics_engine="Jolt Physics"
+3d/physics_engine="Rapier3D"
 
 [rendering]
 

@@ -8,5 +8,5 @@ namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 
 public class GameObjectDespawnedEvent : GameEvent
 {
-    public IGameObject GameObject { get; set; }
+    public required IGameObject GameObject { get; init; }
 }

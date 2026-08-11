@@ -8,5 +8,5 @@ namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 
 public class ControllerSpawnedEvent : GameEvent
 {
-    public IController? Controller { get; set; }
+    public required IController? Controller { get; init; }
 }

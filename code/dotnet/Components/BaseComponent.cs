@@ -10,7 +10,7 @@ using Godot;
 
 namespace AvoidClaws.code.dotnet.Components;
 
-public partial class BaseComponent : Node3D, IComponent
+public abstract partial class BaseComponent : Node3D, IComponent
 {
     public KableId KableId { get; private set; }
     public uint SpawnedOnTick { get; private set; }
@@ -54,7 +54,11 @@ public partial class BaseComponent : Node3D, IComponent
         throw new NotImplementedException();
     }
 
-    public virtual void HandleReconciliationUntilTick(uint targetTick)
+    public virtual void HandleReconciliationUntilTick(uint startTick, uint endTick)
+    {
+        throw new NotImplementedException();
+    }
+    public virtual void HandleNetTick(uint tick)
     {
         throw new NotImplementedException();
     }

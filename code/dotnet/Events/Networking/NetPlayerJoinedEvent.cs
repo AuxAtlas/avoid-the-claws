@@ -8,6 +8,6 @@ namespace AvoidClaws.code.dotnet.Events.Networking;
 
 public class NetPlayerJoinedEvent : GameEvent
 {
-    public uint JoinedNetTick { get; set; }
-    public KableConnectionId KableConnectionId { get; set; }
+    public required uint JoinedNetTick { get; init; }
+    public required KableConnectionId KableConnectionId { get; init; }
 }

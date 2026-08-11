@@ -15,30 +15,29 @@ public partial class DependencyManager : Node
     private readonly List<object> _injectables = new();
     private readonly List<IService> _services = new();
 
-    public override void _EnterTree()
+    private List<Node> _nodeSearchBuffer = new();
+
+    public void ReconstructDependencies()
     {
-        base._EnterTree();
-
-        GetTree().NodeAdded += OnNodeAdded;
-        GetTree().NodeRemoved += OnNodeRemoved;
-
-        foreach (var child in GetAllChildren(GetTree().Root))
-        {
-            if (IsInjectable(child))
-            {
-                _injectables.Add(child);
-                InjectServicesInto(child);
-            }
-
-            if (child is IService service)
-                AddServiceUnique(service);
-        }
+        _injectables.Clear();
+        _services.Clear();
+        _nodeSearchBuffer.Clear();
+        GetChildrenFromInto(GetTree().Root, ref _nodeSearchBuffer);
+        _nodeSearchBuffer.ForEach(OnNodeAdded);
+    }
+    public void ReinjectDependencies()
+    {
+        _injectables.ForEach(InjectServicesInto);
     }
 
+
+    public override void _EnterTree()
+    {
+        GetTree().NodeAdded += OnNodeAdded;
+        GetTree().NodeRemoved += OnNodeRemoved;
+    }
     public override void _ExitTree()
     {
-        base._ExitTree();
-
         GetTree().NodeAdded -= OnNodeAdded;
         GetTree().NodeRemoved -= OnNodeRemoved;
     }
@@ -51,7 +50,7 @@ public partial class DependencyManager : Node
         if (node is IService nodeService && !_services.Contains(nodeService))
             AddServiceUnique(nodeService);
 
-        if (_injectables.Contains(node))
+        if (IsInjectable(node) && !_injectables.Contains(node))
         {
             _injectables.Add(node);
             InjectServicesInto(node);
@@ -70,8 +69,11 @@ public partial class DependencyManager : Node
             _injectables.Remove(node);
     }
 
-    private void InjectServicesInto(object target)
+    public void InjectServicesInto(object target)
     {
+        if (!IsInjectable(target))
+            return;
+        
         foreach (var field in target
                      .GetType()
                      .GetFields
@@ -147,6 +149,18 @@ public partial class DependencyManager : Node
                 )
             if (Attribute.IsDefined(field, typeof(InjectAttribute)))
                 return true;
+        
+        foreach (var propertyInfo in target
+                     .GetType()
+                     .GetProperties
+                     (
+                         BindingFlags.Instance
+                         | BindingFlags.NonPublic
+                         | BindingFlags.Public
+                     )
+                )
+            if (Attribute.IsDefined(propertyInfo, typeof(InjectAttribute)))
+                return true;
 
         return false;
     }
@@ -159,10 +173,7 @@ public partial class DependencyManager : Node
     public void AddServiceUnique(IService value)
     {
         if (_services.Exists(x => value.GetType().IsInstanceOfType(x)))
-        {
-            GD.PrintErr($"Attempted to add duplicate unique service '{value.GetType().FullName}'");
-            _services.RemoveAll(x => value.GetType().IsInstanceOfType(x));
-        }
+            return;
 
         _services.Add(value);
 
@@ -173,15 +184,15 @@ public partial class DependencyManager : Node
 
     private void RemoveService(IService value)
     {
-        _services.RemoveAll(x => value.GetType().IsInstanceOfType(x));
+        _services.Remove(value);
     }
 
-    private List<Node> GetAllChildren(Node rootNode)
+    private void GetChildrenFromInto(Node rootNode, ref List<Node> collectionRef)
     {
-        List<Node> currentList = [rootNode];
-
-        foreach (var child in rootNode.GetChildren()) currentList.AddRange(GetAllChildren(child));
-
-        return currentList;
+        collectionRef.AddRange(rootNode.GetChildren());
+        foreach (var child in rootNode.GetChildren())
+        {
+            GetChildrenFromInto(child, ref collectionRef);
+        }
     }
 }

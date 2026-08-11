@@ -7,6 +7,7 @@ using AvoidClaws.code.dotnet.Events;
 using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Resources;
+using AvoidClaws.code.dotnet.Screens;
 using AvoidClaws.code.dotnet.Services;
 using Godot;
 using GameWorld = AvoidClaws.code.dotnet.World.GameWorld;
@@ -17,97 +18,113 @@ namespace AvoidClaws.code.dotnet;
 
 public partial class CoreGame : Node, IService
 {
-    #region ENUMS
+	#region ENUMS
 
-    public enum ActorType : ushort
-    {
-        Player,
+	public enum ActorType : ushort
+	{
+		Player,
 
-        HealthPickup,
-        SpeedPickup
-    }
+		HealthPickup,
+		SpeedPickup
+	}
 
-    public enum ControllerType : ushort
-    {
-        Dummy = 1,
-        LocalPlayer = 2
-    }
+	public enum ControllerType : ushort
+	{
+		Dummy = 1,
+		LocalPlayer = 2
+	}
 
-    public enum BuffType : ushort
-    {
-        Speed
-    }
+	public enum BuffType : ushort
+	{
+		Speed
+	}
 
-    #endregion
+	#endregion
 
-    #region INJECTIONS
+	#region INJECTIONS
 
-    [Inject]
-    public EventBus EventBus { get; } = null!;
+	[Inject]
+	public EventBus EventBus { get; private set; } = null!;
 
-    [Inject]
-    public NetworkManager Network { get; } = null!;
+	[Inject]
+	public NetworkManager Network { get; private set; } = null!;
 
-    [Inject]
-    public GameResources Resources { get; } = null!;
+	[Export]
+	public GameResources Resources { get; private set; } = null!;
 
-    [Inject]
-    public GameWorld World { get; } = null!;
+	[Export]
+	public GameWorld World { get; private set; } = null!;
 
-    #endregion
+	[Export]
+	public GameScreens Screens { get; private set; } = null!;
 
-    public Random Random { get; private set; } = null!;
+	[Export]
+	private DependencyManager _dependencyManager;
 
-    public bool IsClient => !IsServer;
-    public bool IsServer => Network.IsServer;
+	#endregion
 
-    public readonly List<ErrorMessage> DisplayedErrorMessages = new();
+	public Random Random { get; private set; } = null!;
 
-    public override void _EnterTree()
-    {
-        Random = new Random(Guid.NewGuid().GetHashCode());
-    }
+	public bool IsClient => !IsServer;
+	public bool IsServer => Network.IsServer;
 
-    public override void _Ready()
-    {
-        World.ChangeMapTo(Resources.ScreenPrefabs.MainMenuScreen);
-    }
+	public readonly List<ErrorMessage> DisplayedErrorMessages = new();
+	
+	private Viewport _rootViewport;
+	internal Rid PhysicsSpace3DRid => _rootViewport.World3D.Space;
 
-    public void CriticalError(string message)
-    {
-        GD.PushError($"[Critical Error] {message}");
-        DisplayedErrorMessages.Add
-        (
-            new ErrorMessage
-            {
-                Message = $"[Critical Error] {message}",
-                SecondsRemaining = 10f
-            }
-        );
-        World.GotoMainMenu();
-    }
+	public override void _EnterTree()
+	{
+		Random = new Random(Guid.NewGuid().GetHashCode());
+	}
 
-    public KableId GenerateKableId()
-    {
-        return new KableId(GenerateRawKableId());
-    }
+	public override void _Ready()
+	{
+		_dependencyManager.ReconstructDependencies();
+		_dependencyManager.ReinjectDependencies();
+		
+		_rootViewport = GetViewport();
+		PhysicsServer3D.SpaceSetActive(PhysicsSpace3DRid, false);
+		
+		Screens.DisplayMainMenuScreen();
+	}
 
-    public uint GenerateRawKableId()
-    {
-        uint result = 0;
-        while (result == 0)
-            result = (uint)Random.Next() + (uint)Random.Next();
-        return result;
-    }
+	public void CriticalError(string message)
+	{
+		GD.PushError($"[Critical Error] {message}");
+		DisplayedErrorMessages.Add
+		(
+			new ErrorMessage
+			{
+				Message = $"[Critical Error] {message}",
+				SecondsRemaining = 10f
+			}
+		);
+		World.ResetWorld();
+		Screens.DisplayMainMenuScreen();
+	}
 
-    internal void ProcessNetTick(uint tick)
-    {
-        for (var i = 0; i < DisplayedErrorMessages.Count; i++)
-        {
-            DisplayedErrorMessages[i].SecondsRemaining -= NetworkManager.TickDeltaTimeF;
-            if (DisplayedErrorMessages[i].SecondsRemaining <= 0) DisplayedErrorMessages.RemoveAt(i);
-        }
+	public KableId GenerateKableId()
+	{
+		return new KableId(GenerateRawKableId());
+	}
 
-        World.ProcessNetTick(tick);
-    }
+	public uint GenerateRawKableId()
+	{
+		uint result = 0;
+		while (result == 0)
+			result = (uint)Random.Next() + (uint)Random.Next();
+		return result;
+	}
+
+	internal void ProcessNetTick(uint tick)
+	{
+		for (var i = 0; i < DisplayedErrorMessages.Count; i++)
+		{
+			DisplayedErrorMessages[i].SecondsRemaining -= NetworkManager.TickDeltaTimeF;
+			if (DisplayedErrorMessages[i].SecondsRemaining <= 0) DisplayedErrorMessages.RemoveAt(i);
+		}
+
+		World.ProcessNetTick(tick);
+	}
 }

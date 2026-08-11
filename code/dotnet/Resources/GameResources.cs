@@ -17,12 +17,18 @@ public partial class GameResources : Node, IService
 {
     [Export]
     public Control LoadingScreenHandle { get; private set; } = null!;
-
+    
+    [Export]
     public ActorPrefabs ActorPrefabs { get; private set; } = null!;
+    
+    [Export]
     public ControllerPrefabs ControllerPrefabs { get; private set; } = null!;
+    
+    [Export]
     public PickupPrefabs PickupPrefabs { get; private set; } = null!;
+    
+    [Export]
     public LevelPrefabs MapPrefabs { get; private set; } = null!;
-    public ScreenPrefabs ScreenPrefabs { get; private set; } = null!;
 
     private readonly Dictionary<CoreGame.ActorType, Tuple<Type, PackedScene>> _actorRegistry = new();
     private readonly Dictionary<CoreGame.ControllerType, Tuple<Type, PackedScene>> _controllerRegistry = new();
@@ -30,11 +36,10 @@ public partial class GameResources : Node, IService
 
     public override void _Ready()
     {
-        ActorPrefabs = (ActorPrefabs)FindChild("ActorPrefabs");
-        ControllerPrefabs = (ControllerPrefabs)FindChild("ControllerPrefabs");
-        PickupPrefabs = (PickupPrefabs)FindChild("PickupPrefabs");
-        MapPrefabs = (LevelPrefabs)FindChild("LevelPrefabs");
-        ScreenPrefabs = (ScreenPrefabs)FindChild("ScreenPrefabs");
+        ActorPrefabs ??= (ActorPrefabs)FindChild("ActorPrefabs");
+        ControllerPrefabs ??= (ControllerPrefabs)FindChild("ControllerPrefabs");
+        PickupPrefabs ??= (PickupPrefabs)FindChild("PickupPrefabs");
+        MapPrefabs ??= (LevelPrefabs)FindChild("LevelPrefabs");
     }
 
     private void Register<T>(CoreGame.ActorType type, PackedScene prefab) where T : IActor

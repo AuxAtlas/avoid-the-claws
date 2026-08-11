@@ -6,7 +6,7 @@ using Godot;
 
 namespace AvoidClaws.code.dotnet.Screens.Screens;
 
-public partial class JoinGameScreen : BasicScreen
+public partial class JoinGameMenuScreen : BasicMenuScreen
 {
     [Export]
     private LineEdit? _hostAddressInput;
@@ -21,14 +21,15 @@ public partial class JoinGameScreen : BasicScreen
     {
         if (_hostAddressInput == null)
             return;
-
-        Core.World.ChangeMapTo(Core.Resources.ScreenPrefabs.LoadingScreen);
+        
+        Core.Screens.HideAll();
+        Core.Screens.Layers.LoadingLayer.Show();
 
         Core.Network.ConnectToHost(_hostAddressInput!.Text);
     }
 
     private void HandleBackButtonClicked()
     {
-        Core.World.ChangeMapTo(Core.Resources.ScreenPrefabs.MainMenuScreen);
+        Core.Screens.DisplayMainMenuScreen();
     }
 }

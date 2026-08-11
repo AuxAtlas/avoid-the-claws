@@ -7,5 +7,4 @@ public interface IStateObject
     public void IngestNetworkState(ObjectState state);
     public ObjectState GetHistoricState(uint targetTick);
     public void RewindToTick(uint targetTick);
-    public void HandleReconciliationUntilTick(uint targetTick);
 }

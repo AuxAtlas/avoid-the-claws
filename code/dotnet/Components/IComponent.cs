@@ -12,4 +12,6 @@ public interface IComponent : IStateObject
     public IActor? ParentActor { get; }
 
     public void SetupComponent();
+
+    public void HandleNetTick(uint tick);
 }

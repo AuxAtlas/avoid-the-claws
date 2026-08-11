@@ -1,14 +1,18 @@
 #region
 
 using AvoidClaws.code.dotnet.Data;
+using AvoidClaws.code.dotnet.Services;
 using Godot;
 
 #endregion
 
-namespace AvoidClaws.code.dotnet.Screens.Screens;
+namespace AvoidClaws.code.dotnet.Screens;
 
-public partial class MainMenuScreen : BasicScreen
+public abstract partial class BasicMenuScreen : Control
 {
+    [Inject]
+    public CoreGame Core { get; private set; } = null!;
+    
     [Export]
     private Label? _errorMessageLabel;
 
@@ -17,12 +21,9 @@ public partial class MainMenuScreen : BasicScreen
 
     public override void _Ready()
     {
-        base._Ready();
-
         Input.MouseMode = Input.MouseModeEnum.Visible;
-
-        Core.Resources.LoadingScreenHandle.Visible = false;
     }
+    
 
     public override void _Process(double delta)
     {
@@ -58,27 +59,5 @@ public partial class MainMenuScreen : BasicScreen
             _errorMessageLabel?.Text = errorMessage;
             _errorMessagePanel?.SetVisible(true);
         }
-    }
-
-    private void HandleJoinButtonClicked()
-    {
-        Core.World.ChangeMapTo(Core.Resources.ScreenPrefabs.OptionsScreen);
-    }
-
-    private void HandleHostButtonClicked()
-    {
-        Core.Resources.LoadingScreenHandle.Visible = true;
-        Core.Network.HostServer();
-    }
-
-    private void HandleOptionsButtonClicked()
-    {
-        // TODO: Add options screen
-    }
-
-    private void HandleQuitButtonClicked()
-    {
-        GD.Print("Quitting game by request...");
-        GetTree().Quit();
     }
 }

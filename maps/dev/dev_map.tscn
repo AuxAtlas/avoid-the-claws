@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://dmqhwojnm4w4a"]
+
+[ext_resource type="Script" uid="uid://c3rq1l2r8svty" path="res://code/dotnet/Components/Core/DeathboxComponent.cs" id="1_fov0a"]
+
+[sub_resource type="HeightMapShape3D" id="HeightMapShape3D_dolmw"]
+map_width = 20
+map_depth = 20
+map_data = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_dolmw"]
+size = Vector2(20, 20)
+
+[sub_resource type="SphereMesh" id="SphereMesh_8saib"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_dolmw"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_dolmw"]
+
+[node name="DevMap" type="Node3D" unique_id=1724382040]
+
+[node name="DevMapFloor" type="RigidBody3D" parent="." unique_id=226879083]
+freeze = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DevMapFloor" unique_id=2094130144]
+shape = SubResource("HeightMapShape3D_dolmw")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="DevMapFloor" unique_id=1365979205]
+mesh = SubResource("PlaneMesh_dolmw")
+
+[node name="Drop Cube" type="RigidBody3D" parent="." unique_id=767612204]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Drop Cube" unique_id=307457867]
+mesh = SubResource("SphereMesh_8saib")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Drop Cube" unique_id=1663151644]
+shape = SubResource("SphereShape3D_dolmw")
+
+[node name="DeathboxZone" type="Area3D" parent="." unique_id=930444311]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathboxZone" unique_id=1603441389]
+shape = SubResource("WorldBoundaryShape3D_dolmw")
+
+[node name="DeathboxComponent" type="Node" parent="DeathboxZone" unique_id=600500136]
+script = ExtResource("1_fov0a")
+
+[connection signal="body_entered" from="DeathboxZone" to="DeathboxZone/DeathboxComponent" method="HandleObjectTouched"]

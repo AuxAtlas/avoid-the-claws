@@ -6,8 +6,10 @@ using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Events.Lifecycle;
 using AvoidClaws.code.dotnet.Glue;
+using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
+using AvoidClaws.code.dotnet.Util.Wrappers;
 using AvoidClaws.code.dotnet.World.Managers;
 using Godot;
 
@@ -27,10 +29,12 @@ public partial class GameWorld : Node, IService
     public ControllerManager Controllers { get; private set; } = null!;
 
     [Export]
-    public LevelManager Level { get; private set; } = null!;
+    public Node3D LevelRoot { get; private set; } = null!;
 
     [Inject]
     protected CoreGame Core { get; } = null!;
+
+    public RapierPhysics RapierPhysics { get; private set; } = new();
 
     public IEnumerable<IGameObject> GameObjects => Actors.SpawnedActors.Concat<IGameObject>(Controllers.SpawnedControllers);
 
@@ -54,6 +58,9 @@ public partial class GameWorld : Node, IService
         objectsToDestroy.AddRange(Actors.SpawnedActors);
         objectsToDestroy.AddRange(Controllers.SpawnedControllers);
         objectsToDestroy.ForEach(x => DestroyObject(x.KableId));
+        
+        foreach (var child in LevelRoot.GetChildren())
+            child.QueueFree();
     }
 
     public void DestroyObject(KableId kableId)
@@ -169,23 +176,29 @@ public partial class GameWorld : Node, IService
     }
 
 
-    internal void ProcessNetTick(uint tick)
+    internal void ProcessNetTick(uint tick, bool flushPhysicsQueries = true)
     {
         foreach (var controller in Controllers.SpawnedControllers)
             controller.HandleNetTick(tick);
 
         foreach (var actor in Actors.SpawnedActors)
             actor.HandleNetTick(tick);
+        
+        RapierPhysics.SpaceStep3D(Core.PhysicsSpace3DRid, NetworkManager.TickDeltaTime);
+        
+        if(flushPhysicsQueries)
+            RapierPhysics.SpaceFlushQueries3D(Core.PhysicsSpace3DRid);
     }
 
     public void ChangeMapTo(PackedScene map)
     {
-        Level.ChangeMapTo(map);
-    }
+        ResetWorld();
 
-    public void GotoMainMenu()
-    {
-        Core.World.ChangeMapTo(Core.Resources.ScreenPrefabs.MainMenuScreen);
+        var mapNode = map.Instantiate();
+        if (mapNode is null)
+            return;
+
+        AddChild(mapNode);
     }
 
     public List<Node> GetAllDescendantsOf(Node rootNode)
