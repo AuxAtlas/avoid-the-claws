@@ -35,9 +35,6 @@ public partial class NetworkManager : Node, IService
 	private double _deltaSinceLastNetTick;
 	private ushort _ticksSinceStateSent;
 
-	[Export]
-	public Label? DebugLabel { get; private set; }
-
 	private readonly List<KableConnectionId> _toSkipPeersCache = new();
 
 	private NetworkState? _lastReceivedNetworkState;
@@ -201,14 +198,7 @@ public partial class NetworkManager : Node, IService
 
 		while (processingTick < _networkTick)
 		{
-			Core.World.ProcessNetTick(processingTick);
-			foreach (var actor in Core.World.Actors.SpawnedActors)
-			{
-				if (actor is PhysicsBody3D physicsBody3D)
-				{
-					physicsBody3D.ForceUpdateTransform();
-				}
-			}
+			Core.World.ProcessNetTick(processingTick, true);
 
 			processingTick++;
 		}

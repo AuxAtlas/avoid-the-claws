@@ -49,13 +49,13 @@ public partial class CoreGame : Node, IService
 	[Inject]
 	public NetworkManager Network { get; private set; } = null!;
 
-	[Export]
+	[Inject]
 	public GameResources Resources { get; private set; } = null!;
 
-	[Export]
+	[Inject]
 	public GameWorld World { get; private set; } = null!;
 
-	[Export]
+	[Inject]
 	public GameScreens Screens { get; private set; } = null!;
 
 	[Export]
@@ -80,8 +80,8 @@ public partial class CoreGame : Node, IService
 
 	public override void _Ready()
 	{
-		_dependencyManager.ReconstructDependencies();
-		_dependencyManager.ReinjectDependencies();
+		// _dependencyManager.ReconstructDependencies();
+		// _dependencyManager.ReinjectDependencies();
 		
 		_rootViewport = GetViewport();
 		PhysicsServer3D.SpaceSetActive(PhysicsSpace3DRid, false);

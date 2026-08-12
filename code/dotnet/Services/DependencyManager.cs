@@ -33,6 +33,8 @@ public partial class DependencyManager : Node
 
     public override void _EnterTree()
     {
+        ReconstructDependencies();
+        ReinjectDependencies();
         GetTree().NodeAdded += OnNodeAdded;
         GetTree().NodeRemoved += OnNodeRemoved;
     }
@@ -47,7 +49,7 @@ public partial class DependencyManager : Node
         if (node == this)
             return;
 
-        if (node is IService nodeService && !_services.Contains(nodeService))
+        if (node is IService nodeService)
             AddServiceUnique(nodeService);
 
         if (IsInjectable(node) && !_injectables.Contains(node))

@@ -113,11 +113,6 @@ public partial class GameWorld : Node, IService
         return Actors.CheckActorExists(kableId) || Controllers.CheckControllerExists(kableId);
     }
 
-    // public PlayerController? GetPlayerController()
-    // {
-    // 	return (PlayerController?)_spawnedControllers.FirstOrDefault(controller => controller.GetType() == typeof(PlayerController)).Value;
-    // }
-
 
 
 
