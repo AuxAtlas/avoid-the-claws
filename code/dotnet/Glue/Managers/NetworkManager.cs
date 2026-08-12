@@ -170,7 +170,6 @@ public partial class NetworkManager : Node, IService
 				break;
 			}
 		}
-
 		if (needsReconciliation)
 		{
 			ProcessNetReconciliation(state);

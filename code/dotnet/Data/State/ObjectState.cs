@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Networking.Data;
 using Godot;
@@ -11,21 +12,24 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Data.State;
 
-public class ObjectState : INetSerializable, IEquatable<ObjectState>
+public record ObjectState : INetSerializable
 {
     public KableId ObjectId { get; set; } = new(0);
     public KableConnectionId AuthorityConnectionId { get; set; } = new(0);
     public uint NetworkTick { get; set; }
 
-    private List<byte> CustomBytes { get; } = [];
-    private List<uint> CustomUInts { get; } = [];
-    private List<float> CustomFloats { get; } = [];
-    private List<Vector3> CustomVectors { get; } = [];
+    private readonly List<byte> _customBytes = [];
+    private readonly List<uint> _customUInts = [];
+    private readonly List<float> _customFloats = [];
+    private readonly List<Vector3> _customVectors = [];
 
-    private int byteReadPos;
-    private int uintReadPos;
-    private int floatReadPos;
-    private int vectorReadPos;
+    private int _byteReadPos;
+    private int _uintReadPos;
+    private int _floatReadPos;
+    private int _vectorReadPos;
+
+    private bool _isDirty = true;
+    private int _lastHashCache = 0;
 
     public void Serialize(NetDataWriter writer)
     {
@@ -33,10 +37,10 @@ public class ObjectState : INetSerializable, IEquatable<ObjectState>
         writer.Put(AuthorityConnectionId);
         writer.Put(NetworkTick);
 
-        writer.PutBytesWithLength(CustomBytes.ToArray());
-        writer.PutArray(CustomUInts.ToArray());
-        writer.PutArray(CustomFloats.ToArray());
-        writer.PutArray(CustomVectors.ToArray());
+        writer.PutBytesWithLength(_customBytes.ToArray());
+        writer.PutArray(_customUInts.ToArray());
+        writer.PutArray(_customFloats.ToArray());
+        writer.PutArray(_customVectors.ToArray());
     }
 
     public void Deserialize(NetDataReader reader)
@@ -47,98 +51,87 @@ public class ObjectState : INetSerializable, IEquatable<ObjectState>
 
         ResetCustoms();
 
-        CustomBytes.AddRange(reader.GetBytesWithLength());
-        CustomUInts.AddRange(reader.GetUIntArray());
-        CustomFloats.AddRange(reader.GetFloatArray());
-        reader.ReadVector3ArrayInto(CustomVectors);
+        _customBytes.AddRange(reader.GetBytesWithLength());
+        _customUInts.AddRange(reader.GetUIntArray());
+        _customFloats.AddRange(reader.GetFloatArray());
+        reader.ReadVector3ArrayInto(_customVectors);
     }
 
     public void ResetCustoms()
     {
-        CustomBytes.Clear();
-        CustomUInts.Clear();
-        CustomFloats.Clear();
-        CustomVectors.Clear();
+        _customBytes.Clear();
+        _customUInts.Clear();
+        _customFloats.Clear();
+        _customVectors.Clear();
 
-        byteReadPos = 0;
-        uintReadPos = 0;
-        floatReadPos = 0;
-        vectorReadPos = 0;
+        _byteReadPos = 0;
+        _uintReadPos = 0;
+        _floatReadPos = 0;
+        _vectorReadPos = 0;
+
+        _isDirty = true;
     }
 
     public void Put(byte val)
     {
-        CustomBytes.Add(val);
+        _customBytes.Add(val);
+        _isDirty = true;
     }
 
     public void Put(uint val)
     {
-        CustomUInts.Add(val);
+        _customUInts.Add(val);
+        _isDirty = true;
     }
 
     public void Put(float val)
     {
-        CustomFloats.Add(val);
+        _customFloats.Add(val);
+        _isDirty = true;
     }
 
     public void Put(Vector3 val)
     {
-        CustomVectors.Add(val);
+        _customVectors.Add(val);
+        _isDirty = true;
     }
 
     public void Put(Vector2 val)
     {
-        CustomFloats.Add(val.X);
-        CustomFloats.Add(val.Y);
+        _customFloats.Add(val.X);
+        _customFloats.Add(val.Y);
+        _isDirty = true;
     }
 
     public byte ReadByte()
     {
-        return CustomBytes[byteReadPos++];
+        return _customBytes[_byteReadPos++];
     }
 
     public uint ReadUInt()
     {
-        return CustomUInts[uintReadPos++];
+        return _customUInts[_uintReadPos++];
     }
 
     public float ReadFloat()
     {
-        return CustomFloats[floatReadPos++];
+        return _customFloats[_floatReadPos++];
     }
 
     public Vector3 ReadVector3()
     {
-        return CustomVectors[vectorReadPos++];
+        return _customVectors[_vectorReadPos++];
     }
 
     public Vector2 ReadVector2()
     {
         return new Vector2(ReadFloat(), ReadFloat());
     }
-
-    public bool Equals(ObjectState? other)
+    public Vector3 GetVector3AtIndex(int index)
     {
-        if (other is null)
-            return false;
-        if (ReferenceEquals(this, other))
-            return true;
-        return ObjectId.Equals(other.ObjectId) && NetworkTick == other.NetworkTick && CustomBytes.Equals(other.CustomBytes) && CustomUInts.Equals(other.CustomUInts) && CustomFloats.Equals(other.CustomFloats) && CustomVectors.Equals(other.CustomVectors);
+        if(index >= 0 && index < _customVectors.Count)
+            return _customVectors[index];
+        throw new IndexOutOfRangeException();
     }
 
-    public override bool Equals(object? obj)
-    {
-        if (obj is null)
-            return false;
-        if (ReferenceEquals(this, obj))
-            return true;
-        if (obj.GetType() != GetType())
-            return false;
-        return Equals((ObjectState)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(ObjectId, NetworkTick, CustomBytes, CustomUInts, CustomFloats, CustomVectors);
-    }
 }

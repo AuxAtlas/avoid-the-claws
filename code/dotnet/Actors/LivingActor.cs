@@ -8,6 +8,7 @@ using AvoidClaws.code.dotnet.Buffs;
 using AvoidClaws.code.dotnet.Components;
 using AvoidClaws.code.dotnet.Components.Core;
 using AvoidClaws.code.dotnet.Data.State;
+using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
@@ -358,7 +359,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         var referenceTick = referenceState.NetworkTick % NetworkManager.MaxTickSequence;
         var historicState = GetHistoricState(referenceTick);
 
-        return historicState.Equals(referenceState);
+        return Vector3.IsEqualApprox(referenceState.GetVector3AtIndex(0), historicState.GetVector3AtIndex(0), 0.001f);
     }
 
     public override void _Process(double delta)
