@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using AvoidClaws.code.dotnet.Buffs;
 using AvoidClaws.code.dotnet.Components;
+using AvoidClaws.code.dotnet.Data.State;
 using AvoidClaws.code.dotnet.Glue;
 using AvoidClaws.code.dotnet.Networking.Data;
 using Godot;
@@ -19,10 +20,7 @@ public interface IActor : IGameObject
 
     public bool IsDead { get; }
 
-    public void SetMovementInput(Vector2 input);
-    public void SetRotationInput(Vector2 input);
-    public void SetAttackInputsPacked(byte input);
-    public void SetActionInputsPacked(byte input);
+    public void SetInputs(ref readonly ControllerInputs inputs);
 
     public T? GetComponent<T>() where T : IComponent;
 

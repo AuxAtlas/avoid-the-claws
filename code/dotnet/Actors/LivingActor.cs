@@ -170,6 +170,10 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     }
 
 
+    public void SetInputs(ref readonly ControllerInputs inputs)
+    {
+        Inputs = inputs;
+    }
     public T? GetComponent<T>() where T : IComponent
     {
         return (T?)Components.FirstOrDefault(x => x is T);
@@ -439,14 +443,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     }
 
     protected virtual void ProcessInputCustom(float deltaTimeF, ControllerInputs input)
-    {
-    }
-
-    protected virtual void SetInputCustom(ControllerInputs input)
-    {
-    }
-
-    protected virtual void GetInputCustom(ControllerInputs input)
     {
     }
 

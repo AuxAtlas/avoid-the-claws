@@ -21,6 +21,6 @@ public class ControllerInputsPacket : IGamePacket
     public void Deserialize(NetDataReader reader)
     {
         ControllerKableId.SetKableId(reader.GetUInt());
-        Inputs = reader.Get<ControllerInputs>(() => new ControllerInputs());
+        Inputs = reader.Get<ControllerInputs>();
     }
 }

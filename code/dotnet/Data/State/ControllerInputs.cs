@@ -1,5 +1,6 @@
 #region
 
+using System;
 using AvoidClaws.code.dotnet.Extensions;
 using Godot;
 using LiteNetLib.Utils;
@@ -8,7 +9,7 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Data.State;
 
-public class ControllerInputs : INetSerializable
+public struct ControllerInputs : INetSerializable
 {
     public uint NetworkTick;
     public Vector2 MoveInput;
@@ -31,4 +32,49 @@ public class ControllerInputs : INetSerializable
         AttackInputsPacked = reader.GetByte();
         ActionInputsPacked = reader.GetByte();
     }
+
+    /// <summary>
+    /// Resets all inputs to zero
+    /// </summary>
+    public void Clear()
+    {
+        MoveInput = Vector2.Zero;
+        LookInput = Vector2.Zero;
+        AttackInputsPacked = 0;
+        ActionInputsPacked = 0;
+    }
+}
+
+
+public enum ActionName
+{
+    MoveForward,
+    MoveBackward,
+    MoveLeft,
+    MoveRight,
+    MoveUp,
+    MoveDown,
+    AttackPrimary,
+    AttackSecondary,
+    AbilityPrimary,
+    AbilitySecondary,
+}
+
+public static class ActionNamesExtensions
+{
+    public static string ToActionString(this ActionName actionName) => actionName switch
+    {
+        ActionName.MoveForward => "move_forward",
+        ActionName.MoveBackward => "move_backward",
+        ActionName.MoveLeft => "move_left",
+        ActionName.MoveRight => "move_right",
+        ActionName.MoveUp => "move_up",
+        ActionName.MoveDown => "move_down",
+        ActionName.AttackPrimary => "attack_primary",
+        ActionName.AttackSecondary => "attack_secondary",
+        ActionName.AbilityPrimary => "ability_primary",
+        ActionName.AbilitySecondary => "ability_secondary",
+        
+        _ => throw new NotImplementedException()
+    };
 }

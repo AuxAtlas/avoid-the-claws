@@ -197,6 +197,7 @@ public partial class NetworkManager : Node, IService
 
 		while (processingTick < _networkTick)
 		{
+			// TODO: Controllers need to be skipped when doing network ticks with reconciliation
 			Core.World.ProcessNetTick(processingTick, true);
 
 			processingTick++;

@@ -120,6 +120,8 @@ public partial class BlankController : Node, IController
         EditorDescription = GetDebugString();
 
         HandleNetTickCustom(tick);
+        
+        _attachedActors.ForEach(x => x.SetInputs(ref Inputs));
 
         if (IsServer)
         {
@@ -178,16 +180,14 @@ public partial class BlankController : Node, IController
     {
     }
 
-    protected virtual void ProcessInputCustom(float deltaTimeF, ControllerInputs input)
+    protected void SetInputs(ControllerInputs inputs)
     {
+        Inputs = inputs;
     }
 
-    protected virtual void SetInputCustom(ControllerInputs input)
+    protected ref readonly ControllerInputs GetInputs()
     {
-    }
-
-    protected virtual void GetInputCustom(ControllerInputs input)
-    {
+        return ref Inputs;
     }
 
 #endregion
