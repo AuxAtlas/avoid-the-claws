@@ -14,4 +14,6 @@ public interface IComponent : IStateObject
     public void SetupComponent();
 
     public void HandleNetTick(uint tick);
+
+    public void ProcessInput(ControllerInputs inputs, uint tickToProcess);
 }

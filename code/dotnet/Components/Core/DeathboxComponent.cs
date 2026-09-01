@@ -1,3 +1,4 @@
+using AvoidClaws.code.dotnet.Data.State;
 using Godot;
 
 namespace AvoidClaws.code.dotnet.Components.Core;
@@ -12,5 +13,14 @@ public partial class DeathboxComponent : BaseComponent
 			rigidBody.SetLinearVelocity(Vector3.Zero);
 			rigidBody.SetAngularVelocity(Vector3.Zero);
 		}
+	}
+	
+	public override ObjectState GetCurrentState(uint currentTick)
+	{
+		return ObjectState.BlankStateRef;
+	}
+	public override void SetCurrentState(in ObjectState state)
+	{
+        
 	}
 }

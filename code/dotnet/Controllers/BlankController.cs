@@ -67,7 +67,7 @@ public partial class BlankController : Node, IController
         return _stateCache;
     }
 
-    public void SetCurrentState(ObjectState state)
+    public void SetCurrentState(in ObjectState state)
     {
         AuthorityConnectionId = state.AuthorityConnectionId;
 
@@ -77,7 +77,7 @@ public partial class BlankController : Node, IController
         Inputs.ActionInputsPacked = state.ReadByte();
     }
 
-    public void IngestNetworkState(ObjectState state)
+    public void IngestNetworkState(in ObjectState state)
     {
         if (IsServer)
             throw new InvalidOperationException();

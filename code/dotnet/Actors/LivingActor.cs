@@ -94,7 +94,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
     private StringBuilder _debugStringBuilder = new(100);
 
-    private readonly ObjectState _stateCache = new();
+    private ObjectState _stateCache = new();
 
     #endregion
 
@@ -280,10 +280,12 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         _stateCache.Put(Inputs.AttackInputsPacked);
         _stateCache.Put(Inputs.ActionInputsPacked);
 
+        GetCurrentStateCustom(_stateCache);
+
         return _stateCache;
     }
 
-    public void SetCurrentState(ObjectState state)
+    public void SetCurrentState(in ObjectState state)
     {
         AuthorityConnectionId = state.AuthorityConnectionId;
 
@@ -295,9 +297,11 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         Inputs.LookInput = state.ReadVector2();
         Inputs.AttackInputsPacked = state.ReadByte();
         Inputs.ActionInputsPacked = state.ReadByte();
+
+        SetCurrentStateCustom(state);
     }
 
-    public void IngestNetworkState(ObjectState state)
+    public void IngestNetworkState(in ObjectState state)
     {
         if (IsServer)
             throw new InvalidOperationException();
@@ -442,13 +446,13 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     {
     }
 
-    protected virtual void ProcessInputCustom(float deltaTimeF, ControllerInputs input)
-    {
-    }
-
     protected virtual void HandleHealthChanged(HealthComponent.HealthUpdateInfo healthUpdateInfo)
     {
     }
+
+    protected abstract void ProcessInputCustom(float deltaTimeF, ControllerInputs input);
+    protected abstract void GetCurrentStateCustom(in ObjectState stateBuffer);
+    protected abstract void SetCurrentStateCustom(in ObjectState objectState);
 
     #endregion
 }

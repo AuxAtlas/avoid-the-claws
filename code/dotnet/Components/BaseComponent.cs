@@ -29,36 +29,29 @@ public abstract partial class BaseComponent : Node3D, IComponent
     {
     }
 
-    public virtual ObjectState GetCurrentState(uint currentTick)
-    {
-        throw new NotImplementedException();
-    }
+    public abstract ObjectState GetCurrentState(uint currentTick);
 
-    public virtual void SetCurrentState(ObjectState state)
+    public abstract void SetCurrentState(in ObjectState state);
+    public virtual void IngestNetworkState(in ObjectState state)
     {
-        throw new NotImplementedException();
-    }
-
-    public virtual void IngestNetworkState(ObjectState state)
-    {
-        throw new NotImplementedException();
     }
 
     public virtual ObjectState GetHistoricState(uint targetTick)
     {
-        throw new NotImplementedException();
+        return ObjectState.BlankStateRef;
     }
 
     public virtual void RewindToTick(uint targetTick)
     {
-        throw new NotImplementedException();
     }
 
     public virtual void HandleReconciliationUntilTick(uint startTick, uint endTick)
     {
-        throw new NotImplementedException();
     }
     public virtual void HandleNetTick(uint tick)
+    {
+    }
+    public void ProcessInput(ControllerInputs inputs, uint tickToProcess)
     {
         throw new NotImplementedException();
     }

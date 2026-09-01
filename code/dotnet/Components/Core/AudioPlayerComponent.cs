@@ -1,6 +1,7 @@
 #region
 
 using System.Collections.Generic;
+using AvoidClaws.code.dotnet.Data.State;
 using Godot;
 
 #endregion
@@ -27,6 +28,14 @@ public partial class AudioPlayerComponent : BaseComponent
     {
         base.SetupComponent();
         _audioPlayer?.Stop();
+    }
+    public override ObjectState GetCurrentState(uint currentTick)
+    {
+        return ObjectState.BlankStateRef;
+    }
+    public override void SetCurrentState(in ObjectState state)
+    {
+        
     }
 
     public override string[] _GetConfigurationWarnings()

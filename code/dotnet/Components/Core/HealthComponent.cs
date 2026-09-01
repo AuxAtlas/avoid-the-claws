@@ -46,8 +46,17 @@ public partial class HealthComponent : BaseComponent
     {
         Revive();
     }
-
-    public override void SetCurrentState(ObjectState state)
+    
+    
+    public override ObjectState GetCurrentState(uint currentTick)
+    {
+        _stateCache.ResetCustoms();
+        _stateCache.Put(CurrentHealth);
+        _stateCache.Put(MaxHealth);
+        _stateCache.Put(IsDead ? (byte)1 : (byte)0);
+        return _stateCache;
+    }
+    public override void SetCurrentState(in ObjectState state)
     {
         var oldHealth = CurrentHealth;
         CurrentHealth = state.ReadFloat();
@@ -75,15 +84,6 @@ public partial class HealthComponent : BaseComponent
             };
             EmitSignalHealthChanged(info);
         }
-    }
-
-    public override ObjectState GetCurrentState(uint currentTick)
-    {
-        _stateCache.ResetCustoms();
-        _stateCache.Put(CurrentHealth);
-        _stateCache.Put(MaxHealth);
-        _stateCache.Put(IsDead ? (byte)1 : (byte)0);
-        return _stateCache;
     }
 
     public void TakeDamage(float amount, bool suppressSoundEffect = false)

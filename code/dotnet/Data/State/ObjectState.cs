@@ -17,6 +17,7 @@ public record ObjectState : INetSerializable
     public KableId ObjectId { get; set; } = new(0);
     public KableConnectionId AuthorityConnectionId { get; set; } = new(0);
     public uint NetworkTick { get; set; }
+    public static readonly ObjectState BlankStateRef = new ObjectState();
 
     private readonly List<byte> _customBytes = [];
     private readonly List<uint> _customUInts = [];
