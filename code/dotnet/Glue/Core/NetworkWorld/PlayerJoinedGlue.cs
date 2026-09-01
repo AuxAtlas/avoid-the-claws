@@ -17,14 +17,7 @@ public partial class PlayerJoinedGlue : GameGlue
     {
         base._Ready();
 
-        Core.EventBus.Subscribe<NetPlayerJoinedEvent>(HandleNetJoinEvent);
-    }
-
-    public override void _ExitTree()
-    {
-        Core.EventBus.Unsubscribe<NetPlayerJoinedEvent>(HandleNetJoinEvent);
-
-        base._ExitTree();
+        Core.EventBus.Subscribe<NetPlayerJoinedEvent>(this, HandleNetJoinEvent);
     }
 
     private void HandleNetJoinEvent(NetPlayerJoinedEvent e)

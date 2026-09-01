@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using AvoidClaws.code.dotnet.Services;
 using AvoidClaws.code.dotnet.Util;
 using Godot;
@@ -12,27 +13,34 @@ namespace AvoidClaws.code.dotnet.Events;
 
 public partial class EventBus : Node, IService
 {
-    private readonly Dictionary<ulong, List<Delegate>> _handlers = new();
+    private readonly Dictionary<ulong, List<WeakAction>> _handlers = new();
 
-    public void Subscribe<T>(Action<T> handler) where T : GameEvent
+    public void Subscribe<T>(object subscriber, Action<T> handler) where T : GameEvent
     {
-        if (!_handlers.ContainsKey(HashHelper.FastHash<T>()))
-            _handlers.Add(HashHelper.FastHash<T>(), new List<Delegate>());
+        ulong hash = HashHelper.FastHash<T>();
+        if (!_handlers.ContainsKey(hash))
+            _handlers[hash] = new List<WeakAction>();
 
-        _handlers[HashHelper.FastHash<T>()].Add(handler);
+        _handlers[hash].Add(new WeakAction(subscriber, handler));
     }
 
-    public void Unsubscribe<T>(Action<T> handler) where T : GameEvent
+    public void Unsubscribe<T>(object subscriber, Action<T> handler) where T : GameEvent
     {
-        if (!_handlers.ContainsKey(HashHelper.FastHash<T>()))
+        ulong hash = HashHelper.FastHash<T>();
+        if (!_handlers.ContainsKey(hash))
             return;
-
-        _handlers[HashHelper.FastHash<T>()].Remove(handler);
+        
+        _handlers[hash].RemoveAll(x => x.IsFrom(subscriber));
     }
 
     public void Publish<T>(T @event) where T : GameEvent
     {
-        if (_handlers.ContainsKey(HashHelper.FastHash<T>()))
-            _handlers[HashHelper.FastHash<T>()].ForEach(x => ((Action<T>)x)(@event));
+        ulong hash = HashHelper.FastHash<T>();
+        if (!_handlers.TryGetValue(hash, out var actionsList))
+            return;
+
+        actionsList.RemoveAll(x => !x.IsAlive);
+
+        actionsList.ForEach(x => x.Invoke(@event));
     }
 }
