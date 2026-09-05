@@ -2,8 +2,10 @@
 
 using System;
 using AvoidClaws.code.dotnet.Actors;
+using AvoidClaws.code.dotnet.Buffs;
 using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Events.Networking;
+using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Networking.Packets.Objects;
 using AvoidClaws.code.dotnet.Networking.Packets.State;
 
@@ -13,6 +15,11 @@ namespace AvoidClaws.code.dotnet.Glue.Core.NetworkWorld;
 
 public partial class PlayerJoinedGlue : GameGlue
 {
+    private readonly SpawnActorPacket _spawnActorPacketReusable = new();
+    private readonly SpawnControllerPacket _spawnControllerPacketReusable = new();
+    private readonly SpawnBuffPacket _spawnBuffPacketReusable = new();
+    private readonly NetworkStatePacket _networkStatePacketReusable = new();
+    
     public override void _Ready()
     {
         base._Ready();
@@ -39,73 +46,52 @@ public partial class PlayerJoinedGlue : GameGlue
 
         spawnedController.SetKableAuthority(e.KableConnectionId);
 
-        SpawnControllerPacket spawnControllerPacket = new()
-        {
-            SpawnedObjectId = spawnedController.KableId,
-            AuthorityConnectionId = spawnedController.AuthorityConnectionId,
-            Type = CoreGame.ControllerType.Dummy
-        };
+        _spawnControllerPacketReusable.SpawnedObjectId = spawnedController.KableId;
+        _spawnControllerPacketReusable.AuthorityConnectionId = spawnedController.AuthorityConnectionId;
+        _spawnControllerPacketReusable.Type = CoreGame.ControllerType.Dummy;
         // Tell all OTHER peers to spawn a 'remote player' controller representing this new player
-        Core.Network.SendToAllReliableOrdered(spawnControllerPacket, [e.KableConnectionId]);
+        Core.Network.SendToAllReliableOrdered(_spawnControllerPacketReusable, [e.KableConnectionId]);
 
         var newPlayerKableConnection = Core.Network.GetKableConnectionFromId(e.KableConnectionId);
         if (newPlayerKableConnection == null) throw new InvalidOperationException("NetPlayerJoinedEvent fired with a KableConnectionId that is unknown to the network.");
 
+        _spawnControllerPacketReusable.Type = CoreGame.ControllerType.LocalPlayer;
         // Tell THIS new client to spawn a 'PlayerController'(LocalPlayer) for themselves
-        Core.Network.SendToClientReliableOrdered
-        (
-            new SpawnControllerPacket
-            {
-                SpawnedObjectId = spawnedController.KableId,
-                Type = CoreGame.ControllerType.LocalPlayer,
-                AuthorityConnectionId = spawnedController.AuthorityConnectionId
-            },
-            newPlayerKableConnection
-        );
+        Core.Network.SendToClientReliableOrdered(_spawnControllerPacketReusable, newPlayerKableConnection);
 
-        SpawnActorPacket spawnActorPacket = new()
-        {
-            ActorId = spawnedActor.KableId,
-            AuthorityConnectionId = spawnedActor.AuthorityConnectionId,
-            Type = Core.Resources.GetActorType(spawnedActor)
-        };
-        Core.Network.SendToAllReliableOrdered(spawnActorPacket);
+        _spawnActorPacketReusable.ActorId = spawnedActor.KableId;
+        _spawnActorPacketReusable.AuthorityConnectionId = spawnedActor.AuthorityConnectionId;
+        _spawnActorPacketReusable.Type = Core.Resources.GetActorType(spawnedActor);
+        Core.Network.SendToAllReliableOrdered(_spawnActorPacketReusable);
 
         spawnedActor.Respawn();
 
         // Inform the new player of the current game state
-        foreach (var actor in Core.World.Actors.SpawnedActors)
+        foreach (IActor actor in Core.World.Actors.SpawnedActors)
         {
             if (actor.KableId != spawnedActor.KableId)
-                Core.Network.SendToClientReliableOrdered
-                (
-                    new SpawnActorPacket
-                    {
-                        ActorId = actor.KableId,
-                        AuthorityConnectionId = actor.AuthorityConnectionId,
-                        Type = Core.Resources.GetActorType(actor)
-                    },
-                    newPlayerKableConnection
-                );
+            {
+                _spawnActorPacketReusable.ActorId = actor.KableId;
+                _spawnActorPacketReusable.AuthorityConnectionId = actor.AuthorityConnectionId;
+                _spawnActorPacketReusable.Type = Core.Resources.GetActorType(actor);
+                Core.Network.SendToClientReliableOrdered(_spawnActorPacketReusable, newPlayerKableConnection); 
+            }
 
-            foreach (var buff in actor.GetBuffs())
+            foreach (IBuff buff in actor.GetBuffs())
             {
                 CoreGame.BuffType? buffType = Core.Resources.GetBuffType(buff);
                 if (buffType == null)
                     throw new NullReferenceException("ResourceManager GetBuffType returned null.");
 
-                SpawnBuffPacket spawnBuffPacket = new()
-                {
-                    SpawnedBuffId = buff.KableId,
-                    OwnerActorId = buff.OwnerActor.KableId,
-                    AuthorityConnectionId = buff.OwnerActor.AuthorityConnectionId,
-                    BuffType = buffType.Value
-                };
-                Core.Network.SendToClientReliableOrdered(spawnBuffPacket, newPlayerKableConnection);
+                _spawnBuffPacketReusable.SpawnedBuffId = buff.KableId;
+                _spawnBuffPacketReusable.OwnerActorId = buff.OwnerActor.KableId;
+                _spawnBuffPacketReusable.AuthorityConnectionId = buff.OwnerActor.AuthorityConnectionId;
+                _spawnBuffPacketReusable.BuffType = buffType.Value;
+                Core.Network.SendToClientReliableOrdered(_spawnBuffPacketReusable, newPlayerKableConnection);
             }
         }
 
-        foreach (var controller in Core.World.Controllers.SpawnedControllers)
+        foreach (IController controller in Core.World.Controllers.SpawnedControllers)
         {
             if (controller.KableId == spawnedController.KableId)
                 continue;
@@ -113,27 +99,15 @@ public partial class PlayerJoinedGlue : GameGlue
             var boundType = Core.Resources.GetControllerType(controller);
             if (boundType == CoreGame.ControllerType.LocalPlayer) boundType = CoreGame.ControllerType.Dummy;
 
-            Core.Network.SendToClientReliableOrdered
-            (
-                new SpawnControllerPacket
-                {
-                    SpawnedObjectId = controller.KableId,
-                    Type = boundType,
-                    AuthorityConnectionId = controller.AuthorityConnectionId
-                },
-                newPlayerKableConnection
-            );
+            _spawnControllerPacketReusable.SpawnedObjectId = controller.KableId;
+            _spawnControllerPacketReusable.AuthorityConnectionId = controller.AuthorityConnectionId;
+            _spawnControllerPacketReusable.Type = boundType;
+            Core.Network.SendToClientReliableOrdered(_spawnControllerPacketReusable, newPlayerKableConnection);
         }
 
         spawnedController.Attach(spawnedActor);
 
-        Core.Network.SendToClientReliableOrdered
-        (
-            new NetworkStatePacket
-            {
-                State = Core.Network.GetStateOrCached()
-            },
-            newPlayerKableConnection
-        );
+        _networkStatePacketReusable.State = Core.Network.GetStateOrCached();
+        Core.Network.SendToClientReliableOrdered(_networkStatePacketReusable, newPlayerKableConnection);
     }
 }

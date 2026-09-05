@@ -6,8 +6,8 @@ using AvoidClaws.code.dotnet.Networking.Data;
 
 namespace AvoidClaws.code.dotnet.Events.Networking;
 
-public class NetPlayerJoinedEvent : GameEvent
+public record NetPlayerJoinedEvent : GameEvent
 {
-    public required uint JoinedNetTick { get; init; }
-    public required KableConnectionId KableConnectionId { get; init; }
+    public uint JoinedNetTick { get; set; } = 0;
+    public KableConnectionId KableConnectionId { get; set; } = null!;
 }

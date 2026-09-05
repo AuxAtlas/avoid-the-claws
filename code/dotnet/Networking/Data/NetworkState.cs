@@ -10,7 +10,7 @@ namespace AvoidClaws.code.dotnet.Networking.Data;
 
 public struct NetworkState : INetSerializable
 {
-    public KableConnectionId ServerKableId { get; set; } = default;
+    public KableConnectionId ServerKableId { get; set; } = null!;
 
     public uint NetworkTick { get; set; } = 0;
 

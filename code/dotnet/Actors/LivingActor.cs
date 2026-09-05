@@ -26,7 +26,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     [Inject]
     public CoreGame Core { get; } = null!;
 
-    #region EXPORTS
+#region EXPORTS
 
     [Export]
     public BoxShape3D? HurtBox { get; private set; }
@@ -53,7 +53,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
     #endregion
 
-    #region VARIABLES
+#region VARIABLES
 
     private bool _isClientFocused;
 
@@ -96,15 +96,21 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
     private ObjectState _stateCache = new();
 
-    #endregion
+#endregion
 
+    
+    public void Spawned(uint spawnedTick)
+    {
+        SpawnedOnTick = spawnedTick;
+    }
+    
     public void KableSetup(KableId connectionId)
     {
         KableId = connectionId;
     }
 
 
-    public void Setup()
+    public virtual void Setup(uint tick)
     {
         if (ComponentContainer != null)
         {
@@ -117,19 +123,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
             Components.ForEach(x => x.SetupComponent());
         }
-    }
-
-    public void Start(uint startTick)
-    {
-        SpawnedOnTick = startTick;
-    }
-
-    public void Stop()
-    {
-    }
-
-    public void Teardown()
-    {
     }
 
     protected virtual void CacheComponentReferences()
@@ -232,12 +225,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         {
             _stateHistory[tick % NetworkManager.MaxTickSequence] = GetCurrentState(tick);
         }
-
-        // TODO: Add Client2Server input sending
-        // if (NetworkManager.IsServer || AuthorityConnectionId.Equals(NetworkManager.MyConnectionId))
-        // {
-        //     SendInputSync(currentTick);
-        // }
 
         if (_respawnTimer > 0d && IsDead)
         {
@@ -440,15 +427,15 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         return _debugStringBuilder.ToString();
     }
 
-    #region EMPTY VIRTUAL METHODS
+#region EMPTY VIRTUAL METHODS
 
-    protected virtual void GetDebugStringCustom(ref StringBuilder stringBuilder)
-    {
-    }
+    protected virtual void GetDebugStringCustom(ref StringBuilder stringBuilder) { }
 
-    protected virtual void HandleHealthChanged(HealthComponent.HealthUpdateInfo healthUpdateInfo)
-    {
-    }
+    protected virtual void HandleHealthChanged(HealthComponent.HealthUpdateInfo healthUpdateInfo) { }
+    
+    public virtual void Start(uint tick) { }
+    public virtual void Stop(uint tick) { }
+    public virtual void Teardown(uint tick) { }
 
     protected abstract void ProcessInputCustom(float deltaTimeF);
     protected abstract void GetCurrentStateCustom(in ObjectState stateBuffer);

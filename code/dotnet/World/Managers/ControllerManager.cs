@@ -34,12 +34,12 @@ public partial class ControllerManager : Node, IService
         );
     }
 
-    internal void HandleOutgoingController(IController controller)
+    internal void HandleOutgoingController(IController controller, uint tick)
     {
         if (!_spawnedControllers.ContainsKey(controller.KableId))
             return;
 
-        controller.Teardown();
+        controller.Teardown(tick);
         _spawnedControllers.Remove(controller.KableId);
     }
 

@@ -6,7 +6,7 @@ using AvoidClaws.code.dotnet.Controllers;
 
 namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 
-public class ControllerSpawnedEvent : GameEvent
+public record ControllerSpawnedEvent : GameEvent
 {
     public required IController? Controller { get; init; }
 }

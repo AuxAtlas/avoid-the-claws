@@ -6,7 +6,7 @@ using AvoidClaws.code.dotnet.Actors;
 
 namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 
-public class ActorSpawnedEvent : GameEvent
+public record ActorSpawnedEvent : GameEvent
 {
     public required IActor? Actor { get; init; }
 }

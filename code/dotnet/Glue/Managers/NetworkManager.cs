@@ -62,6 +62,9 @@ public partial class NetworkManager : Node, IService
 	private uint _networkTick;
 	private double _networkTimeScaler = 1d;
 
+    private readonly NetworkInitPacket _networkInitPacketReusable = new();
+    private readonly NetPlayerJoinedEvent _netPlayerJoinedEventReusable = new();
+
 	public override void _Ready()
 	{
 		base._Ready();
@@ -136,8 +139,8 @@ public partial class NetworkManager : Node, IService
 		foreach (var controller in Core.World.Controllers.SpawnedControllers)
 			state.ObjectStates.Add(controller.GetCurrentState(_networkTick));
 
-		if (IsServer)
-			state.ServerKableId = new KableConnectionId(MyConnectionId.Id);
+        if (IsServer)
+            state.ServerKableId = MyConnectionId;
 
 		GetStateCustom(ref state);
 		return state;
@@ -273,25 +276,15 @@ public partial class NetworkManager : Node, IService
 		if (IsServer)
 		{
 			_kablePeers.Add(connection.ConnectionId, connection);
-			SendToClientReliableOrdered
-			(
-				new NetworkInitPacket
-				{
-					AssignedConnectionId = connection.ConnectionId,
-					ServerConnectionId = GetServerConnectionId()
-				},
-				connection
-			);
+            _networkInitPacketReusable.AssignedConnectionId = connection.ConnectionId;
+            _networkInitPacketReusable.ServerConnectionId = GetServerConnectionId();
+            SendToClientReliableOrdered(_networkInitPacketReusable, connection);
 		}
 
-		Core.EventBus.Publish
-		(
-			new NetPlayerJoinedEvent
-			{
-				JoinedNetTick = _networkTick,
-				KableConnectionId = connection.ConnectionId
-			}
-		);
+        _netPlayerJoinedEventReusable.JoinedNetTick = _networkTick;
+        _netPlayerJoinedEventReusable.KableConnectionId = connection.ConnectionId;
+        
+		Core.EventBus.Publish(_netPlayerJoinedEventReusable);
 	}
 
 	public override void _Process(double delta)
@@ -363,20 +356,15 @@ public partial class NetworkManager : Node, IService
 		_netManager.Start(_serverPort);
 
 		Core.World.ChangeMapTo(Core.Resources.MapPrefabs.DevEnvMap);
-		var kableConnectionId = Core.GenerateRawKableId();
-		MyConnectionId = new KableConnectionId(0);
+		uint kableConnectionId = Core.GenerateRawKableId();
+		MyConnectionId = new KableConnectionId(1);
 		GD.Print($"Server KableConnectionId: {MyConnectionId}");
 
 		Core.Resources.LoadingScreenHandle.Visible = false;
 
-		Core.EventBus.Publish
-		(
-			new NetPlayerJoinedEvent
-			{
-				JoinedNetTick = _networkTick,
-				KableConnectionId = MyConnectionId
-			}
-		);
+        _netPlayerJoinedEventReusable.JoinedNetTick = _networkTick;
+        _netPlayerJoinedEventReusable.KableConnectionId = MyConnectionId;
+		Core.EventBus.Publish(_netPlayerJoinedEventReusable);
 	}
 
 

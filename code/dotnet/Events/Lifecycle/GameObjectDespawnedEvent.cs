@@ -6,7 +6,7 @@ using AvoidClaws.code.dotnet.Glue;
 
 namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 
-public class GameObjectDespawnedEvent : GameEvent
+public record GameObjectDespawnedEvent : GameEvent
 {
     public required IGameObject GameObject { get; init; }
 }

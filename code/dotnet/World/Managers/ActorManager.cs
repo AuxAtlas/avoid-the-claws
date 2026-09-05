@@ -33,12 +33,12 @@ public partial class ActorManager : Node, IService
         );
     }
 
-    internal void HandleOutgoingActor(IActor actor)
+    internal void HandleOutgoingActor(IActor actor, uint tick)
     {
         if (!_spawnedActors.ContainsKey(actor.KableId))
             return;
 
-        actor.Teardown();
+        actor.Teardown(tick);
         _spawnedActors.Remove(actor.KableId);
     }
 

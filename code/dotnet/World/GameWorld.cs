@@ -35,6 +35,8 @@ public partial class GameWorld : Node, IService
     protected CoreGame Core { get; } = null!;
 
     public RapierPhysics RapierPhysics { get; private set; } = new();
+    
+    private uint _latestNetworkTick = 0;
 
     public IEnumerable<IGameObject> GameObjects => Actors.SpawnedActors.Concat<IGameObject>(Controllers.SpawnedControllers);
 
@@ -86,8 +88,8 @@ public partial class GameWorld : Node, IService
 
     public void DestroyObject(IGameObject target)
     {
-        target.Stop();
-        target.Teardown();
+        target.Stop(_latestNetworkTick);
+        target.Teardown(_latestNetworkTick);
 
         if (target is Node node)
             node.QueueFree();
@@ -151,12 +153,12 @@ public partial class GameWorld : Node, IService
         {
             case IActor actor:
             {
-                Actors.HandleOutgoingActor(actor);
+                Actors.HandleOutgoingActor(actor, _latestNetworkTick);
                 break;
             }
             case IController controller:
             {
-                Controllers.HandleOutgoingController(controller);
+                Controllers.HandleOutgoingController(controller, _latestNetworkTick);
                 break;
             }
         }
@@ -173,6 +175,8 @@ public partial class GameWorld : Node, IService
 
     internal void ProcessNetTick(uint tick, bool flushPhysicsQueries = true)
     {
+        _latestNetworkTick = tick;
+        
         foreach (var controller in Controllers.SpawnedControllers)
             controller.HandleNetTick(tick);
 

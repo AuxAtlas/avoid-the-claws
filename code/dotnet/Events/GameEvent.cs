@@ -1,6 +1,6 @@
 namespace AvoidClaws.code.dotnet.Events;
 
-public abstract class GameEvent
+public abstract record GameEvent
 {
     private bool _cancelled;
 

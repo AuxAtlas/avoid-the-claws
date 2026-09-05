@@ -10,7 +10,7 @@ namespace AvoidClaws.code.dotnet.Networking.Packets.State;
 
 public class ControllerInputsPacket : IGamePacket
 {
-    public KableId ControllerKableId { get; set; }
+    public KableId ControllerKableId { get; set; } = null!;
     public ControllerInputs Inputs { get; set; } = new();
 
     public void Serialize(NetDataWriter writer)

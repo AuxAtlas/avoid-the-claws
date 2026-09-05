@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Data.State;
+using AvoidClaws.code.dotnet.Glue.interfaces;
 using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
@@ -17,7 +18,7 @@ namespace AvoidClaws.code.dotnet.Controllers;
 /// <summary>
 /// Controller base class with always zero'd inputs
 /// </summary>
-public partial class BlankController : Node, IController
+public partial class BlankController : Node, IController, ILifecycleObject
 {
     [Inject]
     public CoreGame Core { get; } = null!;
@@ -41,10 +42,24 @@ public partial class BlankController : Node, IController
     private StringBuilder _debugStringBuilder = new(100);
 
     private readonly ObjectState _stateCache = new();
+    
+    
 
-    public void KableSetup(KableId connectionId)
+    public void Spawned(uint spawnedTick)
     {
-        KableId = connectionId;
+        SpawnedOnTick = spawnedTick;
+    }
+
+    public virtual void Setup(uint tick) { }
+    public virtual void Start(uint tick) { }
+    public virtual void Stop(uint tick) { }
+    public virtual void Teardown(uint tick) { }
+
+
+    public void KableSetup(KableId kableId)
+    {
+        KableId = kableId;
+        KableSetupCustom(kableId);
     }
 
     public void SetKableAuthority(KableConnectionId connectionId)
@@ -103,15 +118,6 @@ public partial class BlankController : Node, IController
         _actionInputsPacked = 0;
     }
 
-    public virtual void Setup()
-    {
-    }
-
-    public void Start(uint startTick)
-    {
-        SpawnedOnTick = startTick;
-    }
-
     public void HandleNetTick(uint tick)
     {
         if (Destroyed || !Core.Network.FinishedInitialSync)
@@ -121,20 +127,12 @@ public partial class BlankController : Node, IController
 
         HandleNetTickCustom(tick);
         
-        _attachedActors.ForEach(x => x.SetInputs(in Inputs));
+        _attachedActors.ForEach(x => x.SetInputs(Inputs));
 
         if (IsServer)
         {
             _stateHistory[tick % NetworkManager.MaxTickSequence] = GetCurrentState(tick);
         }
-    }
-
-    public void Stop()
-    {
-    }
-
-    public void Teardown()
-    {
     }
 
     public void Attach(IActor actor)
@@ -172,7 +170,7 @@ public partial class BlankController : Node, IController
     }
 
 #region EMPTY VIRTUAL METHODS
-
+    protected virtual void KableSetupCustom(KableId kableId) { }
     protected virtual void HandleNetTickCustom(uint tick)
     {
     }
