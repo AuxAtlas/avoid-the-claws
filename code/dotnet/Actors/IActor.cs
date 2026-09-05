@@ -20,7 +20,7 @@ public interface IActor : IGameObject
 
     public bool IsDead { get; }
 
-    public void SetInputs(ref readonly ControllerInputs inputs);
+    public void SetInputs(in ControllerInputs inputs);
 
     public T? GetComponent<T>() where T : IComponent;
 

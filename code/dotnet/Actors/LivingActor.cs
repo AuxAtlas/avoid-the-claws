@@ -170,7 +170,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     }
 
 
-    public void SetInputs(ref readonly ControllerInputs inputs)
+    public void SetInputs(in ControllerInputs inputs)
     {
         Inputs = inputs;
     }
@@ -209,7 +209,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         if (HealthComponent?.IsDead == true)
             return;
 
-        ProcessInputCustom(TickDeltaTimeF, Inputs);
+        ProcessInputCustom(TickDeltaTimeF);
 
         MoveAndSlide(TickDeltaTimeF);
     }
@@ -450,7 +450,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     {
     }
 
-    protected abstract void ProcessInputCustom(float deltaTimeF, ControllerInputs input);
+    protected abstract void ProcessInputCustom(float deltaTimeF);
     protected abstract void GetCurrentStateCustom(in ObjectState stateBuffer);
     protected abstract void SetCurrentStateCustom(in ObjectState objectState);
 

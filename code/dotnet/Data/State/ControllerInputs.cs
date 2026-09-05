@@ -16,6 +16,7 @@ public struct ControllerInputs : INetSerializable
     public Vector2 LookInput;
     public byte AttackInputsPacked;
     public byte ActionInputsPacked;
+    
     public void Serialize(NetDataWriter writer)
     {
         writer.Put(NetworkTick);

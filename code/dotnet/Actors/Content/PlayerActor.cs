@@ -4,12 +4,9 @@ namespace AvoidClaws.code.dotnet.Actors.Content;
 
 public partial class PlayerActor : LivingActor
 {
-    protected override void ProcessInputCustom(float deltaTimeF, ControllerInputs input)
+    protected override void ProcessInputCustom(float deltaTimeF)
     {
-        Inputs.MoveInput = input.MoveInput.Clamp(-1f, 1f);
-        Inputs.LookInput = input.LookInput.Clamp(-1f, 1f);
-        Inputs.AttackInputsPacked = input.AttackInputsPacked;
-        Inputs.ActionInputsPacked = input.ActionInputsPacked;
+        
     }
     protected override void GetCurrentStateCustom(in ObjectState stateBuffer)
     {

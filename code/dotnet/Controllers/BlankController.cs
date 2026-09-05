@@ -121,7 +121,7 @@ public partial class BlankController : Node, IController
 
         HandleNetTickCustom(tick);
         
-        _attachedActors.ForEach(x => x.SetInputs(ref Inputs));
+        _attachedActors.ForEach(x => x.SetInputs(in Inputs));
 
         if (IsServer)
         {
