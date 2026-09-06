@@ -24,18 +24,9 @@ public partial class AudioPlayerComponent : BaseComponent
 
     private AudioStreamPlayer3D? _audioPlayer;
 
-    public override void SetupComponent()
+    public override void Setup(uint tick)
     {
-        base.SetupComponent();
         _audioPlayer?.Stop();
-    }
-    public override ObjectState GetCurrentState(uint currentTick)
-    {
-        return ObjectState.BlankStateRef;
-    }
-    public override void SetCurrentState(in ObjectState state)
-    {
-        
     }
 
     public override string[] _GetConfigurationWarnings()
@@ -64,4 +55,8 @@ public partial class AudioPlayerComponent : BaseComponent
         _audioPlayer.Stream = audio;
         _audioPlayer.Play();
     }
+    
+
+    protected override void GetCurrentStateCustom(in ObjectState stateBuffer) { }
+    protected override void SetCurrentStateCustom(in ObjectState state) { }
 }

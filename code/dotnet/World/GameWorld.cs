@@ -9,7 +9,6 @@ using AvoidClaws.code.dotnet.Glue;
 using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
-using AvoidClaws.code.dotnet.Util.Wrappers;
 using AvoidClaws.code.dotnet.World.Managers;
 using Godot;
 
@@ -33,8 +32,6 @@ public partial class GameWorld : Node, IService
 
     [Inject]
     protected CoreGame Core { get; } = null!;
-
-    public RapierPhysics RapierPhysics { get; private set; } = new();
     
     private uint _latestNetworkTick = 0;
 
@@ -123,7 +120,8 @@ public partial class GameWorld : Node, IService
         if (node is not IGameObject gameObject)
             return;
 
-        if (!gameObject.KableId.IsValid)
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (gameObject.KableId == null || !gameObject.KableId.IsValid)
             gameObject.KableSetup(Core.GenerateKableId());
 
         switch (node)
@@ -173,20 +171,36 @@ public partial class GameWorld : Node, IService
     }
 
 
-    internal void ProcessNetTick(uint tick, bool flushPhysicsQueries = true)
+    internal void ProcessNetTick(uint tick, bool isReconciliation = false)
     {
         _latestNetworkTick = tick;
         
-        foreach (var controller in Controllers.SpawnedControllers)
-            controller.HandleNetTick(tick);
+        if(!isReconciliation)
+        {
+            foreach (IController controller in Controllers.SpawnedControllers)
+            {
+                controller.HandleNetTick(tick);
+            }
+        }
 
-        foreach (var actor in Actors.SpawnedActors)
+        foreach (IActor actor in Actors.SpawnedActors)
+        {
             actor.HandleNetTick(tick);
+        }
         
-        RapierPhysics.SpaceStep3D(Core.PhysicsSpace3DRid, NetworkManager.TickDeltaTime);
-        
-        if(flushPhysicsQueries)
-            RapierPhysics.SpaceFlushQueries3D(Core.PhysicsSpace3DRid);
+        Core.StepPhysics3D(NetworkManager.TickDeltaTime);
+
+        if (!isReconciliation)
+        {
+            Core.FlushPhysics3D();
+            foreach (IActor actor in Actors.SpawnedActors)
+            {
+                if (actor is PhysicsBody3D physicsActor3D)
+                {
+                    physicsActor3D.ForceUpdateTransform();
+                }
+            }
+        }
     }
 
     public void ChangeMapTo(PackedScene map)
@@ -197,7 +211,7 @@ public partial class GameWorld : Node, IService
         if (mapNode is null)
             return;
 
-        AddChild(mapNode);
+        LevelRoot.AddChild(mapNode);
     }
 
     public List<Node> GetAllDescendantsOf(Node rootNode)

@@ -29,22 +29,13 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 #region EXPORTS
 
     [Export]
-    public BoxShape3D? HurtBox { get; private set; }
+    public Camera3D? FpvCamera { get; protected set; }
 
     [Export]
-    public Camera3D? Camera { get; protected set; }
+    protected Node3D ComponentContainer { get; private set; } = null!;
 
     [Export]
-    public Node3D? CameraAnchor { get; protected set; }
-
-    [Export]
-    protected Node3D? ComponentContainer { get; private set; }
-
-    [Export]
-    protected Node3D? BuffsContainer { get; private set; }
-
-    [Export]
-    private int _maxMoveBounces = 4;
+    protected Node3D BuffsContainer { get; private set; } = null!;
 
     [Export]
     private float _respawnTimeSeconds = 5f;
@@ -74,31 +65,28 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     private readonly ObjectState[] _stateHistory = new ObjectState[NetworkManager.MaxTickSequence];
     protected ControllerInputs Inputs;
 
-    protected readonly List<IComponent> Components = new();
+    protected readonly Dictionary<KableId, IComponent> Components = new();
     protected readonly List<IBuff> Buffs = new();
 
-    public KableId KableId { get; private set; }
+    public KableId KableId { get; private set; } = null!;
 
-    public KableConnectionId AuthorityConnectionId { get; protected set; }
+    public KableConnectionId AuthorityConnectionId { get; protected set; } = null!;
     public uint SpawnedOnTick { get; private set; }
     public bool ReconciliationMode { get; private set; }
 
     protected HealthComponent? HealthComponent;
-
-    private Vector3 _previousPosition = Vector3.Zero;
-    private Vector3 _realVelocity = Vector3.Zero;
-    private Vector3 _lastMotion = Vector3.Zero;
 
     protected bool IsClient => Core.Network.IsClient;
     protected bool IsServer => Core.Network.IsServer;
 
     private StringBuilder _debugStringBuilder = new(100);
 
-    private ObjectState _stateCache = new();
+    private readonly ObjectState _stateCache = new();
 
-#endregion
+    private readonly List<ObjectState> _reusableComponentStatesList = new();
 
-    
+    #endregion
+
     public void Spawned(uint spawnedTick)
     {
         SpawnedOnTick = spawnedTick;
@@ -112,16 +100,45 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
     public virtual void Setup(uint tick)
     {
-        if (ComponentContainer != null)
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if(ComponentContainer == null)
+            GD.PushError($"ComponentContainer is null on LivingActor with KableId '${KableId}'");
+    }
+
+
+    public virtual void Start(uint tick)
+    {
+        Components.Clear();
+        foreach (var child in ComponentContainer.GetChildren())
         {
-            Components.Clear();
-            foreach (var child in ComponentContainer.GetChildren())
-                if (child is IComponent component)
-                    Components.Add(component);
+            if (child is IComponent component)
+            {
+                Components.Add(component.KableId, component);
+            }
+        }
 
-            CacheComponentReferences();
+        CacheComponentReferences();
 
-            Components.ForEach(x => x.SetupComponent());
+        foreach (IComponent component in Components.Values)
+        {
+            component.Setup(tick);
+            component.Start(tick);
+        }
+    }
+
+    public virtual void Stop(uint tick)
+    {
+        foreach (IComponent component in Components.Values)
+        {
+            component.Stop(tick);
+        }
+    }
+
+    public virtual void Teardown(uint tick)
+    {
+        foreach (IComponent component in Components.Values)
+        {
+            component.Teardown(tick);
         }
     }
 
@@ -133,7 +150,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
             HealthComponent.HealthChanged -= HandleHealthChanged;
         }
 
-        foreach (var component in Components)
+        foreach (var component in Components.Values)
             switch (component)
             {
                 case HealthComponent healthComponent:
@@ -158,7 +175,8 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         if (IsClient)
             return;
 
-        Vector3 spawnPos = new(-300f + Core.Random.NextSingle() * 500f, 10f, -300f + Core.Random.NextSingle() * 500f);
+        Vector3 spawnPos = new(-20f + Core.Random.NextSingle() * 40, 10f, -20f + Core.Random.NextSingle() * 40f);
+        // Vector3 spawnPos = new(0f, 15f, 0f);
         TeleportTo(spawnPos);
     }
 
@@ -169,7 +187,7 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     }
     public T? GetComponent<T>() where T : IComponent
     {
-        return (T?)Components.FirstOrDefault(x => x is T);
+        return (T?)Components.Values.FirstOrDefault(x => x is T);
     }
 
     public void SetMovementInput(Vector2 input)
@@ -194,17 +212,17 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
 
     public virtual void SetClientFocused()
     {
-        Camera?.MakeCurrent();
+        FpvCamera?.MakeCurrent();
     }
 
-    public virtual void ProcessInput(uint tickToProcess)
+    public virtual void ProcessInput(uint processingTick)
     {
-        if (HealthComponent?.IsDead == true)
-            return;
-
-        ProcessInputCustom(TickDeltaTimeF);
-
-        MoveAndSlide(TickDeltaTimeF);
+        foreach (IComponent component in Components.Values)
+        {
+            component.ProcessInput(Inputs, processingTick);
+        }
+        
+        ProcessInputCustom(processingTick);
     }
 
     public void SetKableAuthority(KableConnectionId connectionId)
@@ -217,8 +235,14 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         if (Destroyed || !Core.Network.FinishedInitialSync)
             return;
 
-        EditorDescription = GetDebugString();
+        // EditorDescription = GetDebugString();
 
+        
+        foreach (IComponent component in Components.Values)
+        {
+            component.HandleNetTick(tick);
+        }
+        
         ProcessInput(tick);
 
         if (IsServer)
@@ -229,13 +253,18 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         if (_respawnTimer > 0d && IsDead)
         {
             _respawnTimer -= TickDeltaTimeF;
-            if (_respawnTimer <= 0f) Respawn();
+            if (_respawnTimer <= 0f)
+                Respawn();
 
             EmitSignalRespawnTimerChanged(_respawnTimer);
         }
 
-        ForceUpdateTransform();
+        if (!IsDead)
+        {
+            MoveAndSlide();
+        }
     }
+
 
     public void ApplyBuff(IBuff buff)
     {
@@ -272,6 +301,17 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         return _stateCache;
     }
 
+    public IReadOnlyCollection<ObjectState> GetComponentStates(uint currentTick)
+    {
+        _reusableComponentStatesList.Clear();
+        foreach (IComponent c in Components.Values)
+        {
+            _reusableComponentStatesList.Add(c.GetCurrentState(currentTick));
+        }
+
+        return _reusableComponentStatesList.AsReadOnly();
+    }
+
     public void SetCurrentState(in ObjectState state)
     {
         AuthorityConnectionId = state.AuthorityConnectionId;
@@ -286,6 +326,17 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         Inputs.ActionInputsPacked = state.ReadByte();
 
         SetCurrentStateCustom(state);
+    }
+
+    public void SetComponentStates(uint currentTick, in IReadOnlyCollection<ObjectState> states)
+    {
+        foreach (ObjectState componentState in states)
+        {
+            if (!Components.TryGetValue(componentState.ObjectId, out IComponent? targetComponent))
+                continue;
+            
+            targetComponent.SetCurrentState(componentState);
+        }
     }
 
     public void IngestNetworkState(in ObjectState state)
@@ -357,14 +408,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         return Vector3.IsEqualApprox(referenceState.GetVector3AtIndex(0), historicState.GetVector3AtIndex(0), 0.001f);
     }
 
-    public override void _Process(double delta)
-    {
-        base._Process(delta);
-
-        if (CameraAnchor != null)
-            Camera?.GlobalTransform = CameraAnchor.GetGlobalTransformInterpolated();
-    }
-
     public virtual void LookAt(Vector3 target)
     {
         LookAt(target, Vector3.Zero);
@@ -375,6 +418,8 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         GlobalPosition = position;
         if (rotation is not null)
             GlobalRotation = rotation.Value;
+        
+        ResetPhysicsInterpolation();
     }
 
 
@@ -389,23 +434,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         GetComponent<AudioPlayerComponent>()?.Play(soundEffect, pitch, interrupt);
     }
 
-
-    public void MoveAndSlide(float deltaTimeF)
-    {
-        var motion = Velocity * deltaTimeF;
-        var result = MoveAndCollide(motion);
-
-        for (var i = 0; i < _maxMoveBounces; i++)
-        {
-            if (result == null)
-                break;
-
-            motion = result.GetRemainder().Slide(result.GetNormal());
-            Velocity = Velocity.Slide(result.GetNormal());
-            result = MoveAndCollide(motion);
-        }
-    }
-
     public bool IsLogicAuthority()
     {
         return AuthorityConnectionId == Core.Network.MyConnectionId;
@@ -418,7 +446,6 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
         _debugStringBuilder.Append($"KableId={KableId.Id}\n");
         _debugStringBuilder.Append($"AuthorityConnId={AuthorityConnectionId.Id}\n");
         _debugStringBuilder.Append("---\n");
-
         _debugStringBuilder.Append($"LookInput={Inputs.LookInput.ToString()}\n");
         _debugStringBuilder.Append($"MoveInput={Inputs.MoveInput.ToString()}\n");
 
@@ -432,14 +459,9 @@ public abstract partial class LivingActor : CharacterBody3D, IActor
     protected virtual void GetDebugStringCustom(ref StringBuilder stringBuilder) { }
 
     protected virtual void HandleHealthChanged(HealthComponent.HealthUpdateInfo healthUpdateInfo) { }
-    
-    public virtual void Start(uint tick) { }
-    public virtual void Stop(uint tick) { }
-    public virtual void Teardown(uint tick) { }
-
-    protected abstract void ProcessInputCustom(float deltaTimeF);
     protected abstract void GetCurrentStateCustom(in ObjectState stateBuffer);
     protected abstract void SetCurrentStateCustom(in ObjectState objectState);
+    protected virtual void ProcessInputCustom(uint processingTick) { }
 
     #endregion
 }

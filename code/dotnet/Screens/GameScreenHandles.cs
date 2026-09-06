@@ -1,3 +1,4 @@
+using AvoidClaws.code.dotnet.Data.State;
 using Godot;
 
 namespace AvoidClaws.code.dotnet.Screens;
@@ -18,5 +19,14 @@ public partial class GameScreenHandles : Node
         MainMenuScreenHandle.Hide();
         OptionsScreenHandle.Hide();
         JoinGameScreenHandle.Hide();
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        base._UnhandledKeyInput(@event);
+        if (Input.IsActionJustPressedByEvent(ActionName.Pause.ToActionString(), @event))
+        {
+            Input.MouseMode = Input.MouseMode == Input.MouseModeEnum.Captured ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Captured;
+        }
     }
 }

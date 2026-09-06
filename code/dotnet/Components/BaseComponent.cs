@@ -3,7 +3,9 @@
 using System;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Data.State;
+using AvoidClaws.code.dotnet.Glue.Managers;
 using AvoidClaws.code.dotnet.Networking.Data;
+using AvoidClaws.code.dotnet.Services;
 using Godot;
 
 #endregion
@@ -12,47 +14,89 @@ namespace AvoidClaws.code.dotnet.Components;
 
 public abstract partial class BaseComponent : Node3D, IComponent
 {
+    [Inject]
+    public CoreGame Core { get; } = null!;
+    
     public KableId KableId { get; private set; }
     public uint SpawnedOnTick { get; private set; }
     public IActor? ParentActor { get; private set; }
+    
+    public float TickDeltaTimeF => NetworkManager.TickDeltaTimeF;
 
+    private readonly ObjectState _stateCache = new();
+    
+    private readonly ObjectState[] _stateHistory = new ObjectState[NetworkManager.MaxTickSequence];
+    
+    protected bool IsClient => Core.Network.IsClient;
+    protected bool IsServer => Core.Network.IsServer;
+    
+    public bool Destroyed => IsQueuedForDeletion();
+
+    public bool ReconciliationMode => ParentActor?.ReconciliationMode ?? false;
+    public KableConnectionId AuthorityConnectionId { get; private set; } = KableConnectionId.Server;
     public void KableSetup(KableId kableId)
     {
         KableId = kableId;
     }
 
-    public virtual void SetupComponent()
+    public override void _Ready()
     {
+        base._Ready();
+        
         ParentActor = GetParent()?.GetParentOrNull<IActor>();
     }
-    public virtual void TeardownComponent()
+
+    public ObjectState GetCurrentState(uint currentTick)
     {
+        _stateCache.ResetCustoms();
+        _stateCache.NetworkTick = currentTick;
+
+        GetCurrentStateCustom(_stateCache);
+
+        return _stateCache;
     }
 
-    public abstract ObjectState GetCurrentState(uint currentTick);
-
-    public abstract void SetCurrentState(in ObjectState state);
-    public virtual void IngestNetworkState(in ObjectState state)
+    public void SetCurrentState(in ObjectState state)
     {
+        SetCurrentStateCustom(state);
     }
-
-    public virtual ObjectState GetHistoricState(uint targetTick)
+    public void IngestNetworkState(in ObjectState state)
     {
-        return ObjectState.BlankStateRef;
-    }
+        if (IsServer)
+            throw new InvalidOperationException();
 
-    public virtual void RewindToTick(uint targetTick)
-    {
+        _stateHistory[state.NetworkTick % NetworkManager.MaxTickSequence] = state;
     }
 
-    public virtual void HandleReconciliationUntilTick(uint startTick, uint endTick)
+    public ObjectState GetHistoricState(uint targetTick)
     {
+        return _stateHistory[targetTick % NetworkManager.MaxTickSequence];
     }
-    public virtual void HandleNetTick(uint tick)
+
+    public void RewindToTick(uint targetTick)
     {
+        SetCurrentState(GetHistoricState(targetTick));
     }
-    public void ProcessInput(ControllerInputs inputs, uint tickToProcess)
+
+    public void SetKableAuthority(KableConnectionId connectionId)
     {
-        throw new NotImplementedException();
+        AuthorityConnectionId = connectionId;
     }
+
+    #region OVERRIDABLE EMPTY METHODS
+    
+    protected virtual void GetCurrentStateCustom(in ObjectState stateBuffer) { }
+    protected virtual void SetCurrentStateCustom(in ObjectState objectState) { }
+    public virtual void HandleNetTick(uint tick) { }
+    public virtual void ProcessInput(ControllerInputs inputs, uint tickToProcess) { }
+    public virtual void TeardownComponent() { }
+    public virtual void Start(uint tick) { }
+    public virtual void Setup(uint tick) { }
+    public virtual void Spawned(uint spawnedTick) { }
+    public virtual void Stop(uint tick) { }
+    public virtual void Teardown(uint tick) { }
+
+#endregion
+
+
 }

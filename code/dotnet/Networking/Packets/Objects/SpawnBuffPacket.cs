@@ -7,7 +7,7 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
 
-public class SpawnBuffPacket : IGamePacket
+public record SpawnBuffPacket : IGamePacket
 {
     public KableId SpawnedBuffId { get; set; }
     public KableId OwnerActorId { get; set; }

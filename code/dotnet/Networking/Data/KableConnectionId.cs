@@ -7,44 +7,15 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Data;
 
-public class KableConnectionId : INetSerializable, IEquatable<KableConnectionId>
+public record KableConnectionId(uint Id) : INetSerializable
 {
     public static readonly KableConnectionId Empty = new(0);
+    public static readonly KableConnectionId Server = new(1);
 
-    public uint Id { get; private set; }
+    public uint Id { get; private set; } = Id;
 
     public bool IsValid => Id != 0;
 
-
-    public KableConnectionId(uint connectionId)
-    {
-        Id = connectionId;
-    }
-
-    public override int GetHashCode()
-    {
-        return Id.GetHashCode();
-    }
-
-    public static bool operator ==(KableConnectionId a, KableConnectionId b)
-    {
-        return Equals(a, b) || a.Equals(b);
-    }
-
-    public static bool operator !=(KableConnectionId a, KableConnectionId b)
-    {
-        return !(a == b);
-    }
-
-    public bool Equals(KableConnectionId other)
-    {
-        return Id == other.Id;
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is KableConnectionId other && Equals(other);
-    }
 
     public override string ToString()
     {

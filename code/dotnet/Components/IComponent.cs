@@ -2,18 +2,16 @@
 
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Data.State;
+using AvoidClaws.code.dotnet.Glue;
+using AvoidClaws.code.dotnet.Glue.interfaces;
 
 #endregion
 
 namespace AvoidClaws.code.dotnet.Components;
 
-public interface IComponent : IStateObject
+public interface IComponent : IGameObject, IStateObject, ILifecycleObject
 {
     public IActor? ParentActor { get; }
 
-    public void SetupComponent();
-
-    public void HandleNetTick(uint tick);
-
-    public void ProcessInput(ControllerInputs inputs, uint tickToProcess);
+    public void ProcessInput(ControllerInputs inputs, uint processingTick);
 }

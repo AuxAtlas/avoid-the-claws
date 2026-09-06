@@ -9,8 +9,8 @@ using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Resources;
 using AvoidClaws.code.dotnet.Screens;
 using AvoidClaws.code.dotnet.Services;
+using AvoidClaws.code.dotnet.World;
 using Godot;
-using GameWorld = AvoidClaws.code.dotnet.World.GameWorld;
 
 #endregion
 
@@ -18,7 +18,7 @@ namespace AvoidClaws.code.dotnet;
 
 public partial class CoreGame : Node, IService
 {
-	#region ENUMS
+#region ENUMS
 
 	public enum ActorType : ushort
 	{
@@ -39,9 +39,9 @@ public partial class CoreGame : Node, IService
 		Speed
 	}
 
-	#endregion
+#endregion
 
-	#region INJECTIONS
+#region INJECTIONS
 
 	[Inject]
 	public EventBus EventBus { get; private set; } = null!;
@@ -58,33 +58,21 @@ public partial class CoreGame : Node, IService
 	[Inject]
 	public GameScreens Screens { get; private set; } = null!;
 
-	[Export]
-	private DependencyManager _dependencyManager;
+#endregion
 
-	#endregion
-
-	public Random Random { get; private set; } = null!;
+	public Random Random { get; private set; } = new(Guid.NewGuid().GetHashCode());
 
 	public bool IsClient => !IsServer;
 	public bool IsServer => Network.IsServer;
 
 	public readonly List<ErrorMessage> DisplayedErrorMessages = new();
-	
-	private Viewport _rootViewport;
-	internal Rid PhysicsSpace3DRid => _rootViewport.World3D.Space;
 
-	public override void _EnterTree()
-	{
-		Random = new Random(Guid.NewGuid().GetHashCode());
-	}
-
+    private Rid _rootWorld3DSpaceRid;
+    
 	public override void _Ready()
-	{
-		// _dependencyManager.ReconstructDependencies();
-		// _dependencyManager.ReinjectDependencies();
-		
-		_rootViewport = GetViewport();
-		PhysicsServer3D.SpaceSetActive(PhysicsSpace3DRid, false);
+    {
+        _rootWorld3DSpaceRid = GetTree().Root.World3D.Space;
+		PhysicsServer3D.SpaceSetActive(_rootWorld3DSpaceRid, false);
 		
 		Screens.DisplayMainMenuScreen();
 	}
@@ -122,9 +110,26 @@ public partial class CoreGame : Node, IService
 		for (var i = 0; i < DisplayedErrorMessages.Count; i++)
 		{
 			DisplayedErrorMessages[i].SecondsRemaining -= NetworkManager.TickDeltaTimeF;
-			if (DisplayedErrorMessages[i].SecondsRemaining <= 0) DisplayedErrorMessages.RemoveAt(i);
+			if (DisplayedErrorMessages[i].SecondsRemaining <= 0)
+                DisplayedErrorMessages.RemoveAt(i);
 		}
-
+        
 		World.ProcessNetTick(tick);
 	}
+    
+    /// <summary>
+    /// Steps forward one physics frame using RapierPhysics
+    /// </summary>
+    public void StepPhysics3D(double delta)
+    {
+        PhysicsServer3D.Singleton.Call("space_step", _rootWorld3DSpaceRid, delta);
+    }
+    
+    /// <summary>
+    /// Flush all current RapierPhysicsServer data into Godot physics nodes
+    /// </summary>
+    public void FlushPhysics3D()
+    {
+        PhysicsServer3D.Singleton.Call("space_flush_queries", _rootWorld3DSpaceRid);
+    }
 }

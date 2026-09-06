@@ -17,12 +17,12 @@ public abstract class PacketHandler<TPacketType> where TPacketType : IGamePacket
     protected bool IsClient => Core.Network.IsClient;
 
 
-    public void ProcessPacket(dynamic packet, KableConnection source)
+    public void ProcessPacket(dynamic packet, uint tick, KableConnection source)
     {
-        Handle(packet, source);
+        Handle(packet, tick, source);
     }
 
-    protected virtual void Handle(TPacketType packet, KableConnection source)
+    protected virtual void Handle(TPacketType packet, uint tick, KableConnection source)
     {
     }
 }

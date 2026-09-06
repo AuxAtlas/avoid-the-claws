@@ -10,17 +10,13 @@ namespace AvoidClaws.code.dotnet.Networking.Data;
 
 public struct NetworkState : INetSerializable
 {
-    public KableConnectionId ServerKableId { get; set; } = null!;
+    public KableConnectionId ServerKableId { get; set; }
 
-    public uint NetworkTick { get; set; } = 0;
+    public uint NetworkTick { get; set; }
 
-    public bool FinishedInitialSync { get; set; } = false;
+    public bool FinishedInitialSync { get; set; }
 
-    public List<ObjectState> ObjectStates { get; set; } = [];
-
-    public NetworkState()
-    {
-    }
+    public List<ObjectState> ObjectStates { get; set; }
 
     public void Serialize(NetDataWriter writer)
     {

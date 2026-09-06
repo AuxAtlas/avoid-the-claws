@@ -9,7 +9,7 @@ namespace AvoidClaws.code.dotnet.Networking.Handlers.Objects;
 
 public class DestroyObjectPacketHandler : PacketHandler<DestroyObjectPacket>
 {
-    protected override void Handle(DestroyObjectPacket packet, KableConnection source)
+    protected override void Handle(DestroyObjectPacket packet, uint tick, KableConnection source)
     {
         if (Core.Network.IsServer)
             return;

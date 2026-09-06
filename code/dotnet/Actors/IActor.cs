@@ -14,11 +14,11 @@ namespace AvoidClaws.code.dotnet.Actors;
 
 public interface IActor : IGameObject
 {
-    public BoxShape3D? HurtBox { get; }
     public Vector3 GlobalPosition { get; }
     public Vector3 GlobalRotation { get; }
 
     public bool IsDead { get; }
+    bool ReconciliationMode { get; }
 
     public void SetInputs(in ControllerInputs inputs);
 

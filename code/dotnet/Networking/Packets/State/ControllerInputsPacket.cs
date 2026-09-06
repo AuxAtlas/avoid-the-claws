@@ -8,7 +8,7 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.State;
 
-public class ControllerInputsPacket : IGamePacket
+public record ControllerInputsPacket : IGamePacket
 {
     public KableId ControllerKableId { get; set; } = null!;
     public ControllerInputs Inputs { get; set; } = new();

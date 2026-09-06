@@ -9,7 +9,7 @@ namespace AvoidClaws.code.dotnet.Networking.Handlers.State;
 
 public class NetworkInitPacketHandler : PacketHandler<NetworkInitPacket>
 {
-    protected override void Handle(NetworkInitPacket packet, KableConnection source)
+    protected override void Handle(NetworkInitPacket packet, uint tick, KableConnection source)
     {
         if (IsServer)
             return;

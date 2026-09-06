@@ -53,7 +53,7 @@ public partial class ControllerManager : Node, IService
         return _spawnedControllers.ContainsKey(kableId);
     }
 
-    public Node? SpawnControllerPrefab(PackedScene? prefab, KableId? presetKableId = null)
+    public Node? SpawnControllerPrefab(PackedScene? prefab, uint tick, KableId? presetKableId = null)
     {
         if (!(prefab?.CanInstantiate()).GetValueOrDefault(false))
             return null;
@@ -79,12 +79,16 @@ public partial class ControllerManager : Node, IService
 
         controller.KableSetup(presetKableId);
         controller.SetKableAuthority(Core.Network.GetServerConnectionId());
+        controller.Spawned(tick);
+        controller.Setup(tick);
 
         AddChild(spawned);
 
         if (_spawnedControllers.TryAdd(presetKableId, controller))
             GD.Print($"Spawned controller: {presetKableId}");
 
+        controller.Start(tick);
+        
         return spawned;
     }
 }

@@ -1,7 +1,4 @@
-using AvoidClaws.code.dotnet.Data;
-using Godot;
-
-namespace AvoidClaws.code.dotnet.Screens.Screens;
+namespace AvoidClaws.code.dotnet.Screens.Screens.Menu;
 
 public partial class OptionsMenuScreen : BasicMenuScreen
 {

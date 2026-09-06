@@ -7,7 +7,7 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.State;
 
-public class NetworkInitPacket : IGamePacket
+public record NetworkInitPacket : IGamePacket
 {
     public KableConnectionId AssignedConnectionId { get; set; }
     public KableConnectionId ServerConnectionId { get; set; }

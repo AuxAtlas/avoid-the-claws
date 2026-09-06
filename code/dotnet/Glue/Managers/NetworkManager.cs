@@ -22,7 +22,7 @@ namespace AvoidClaws.code.dotnet.Glue.Managers;
 
 public partial class NetworkManager : Node, IService
 {
-	private const uint NetworkTicksPerSecond = 60;
+	public const uint NetworkTicksPerSecond = 60;
 	private const double MaxSlewAdjust = 0.002d;
 	public const uint MaxTickSequence = 512;
 	private const int DesiredTicksBuffer = 3;
@@ -217,7 +217,7 @@ public partial class NetworkManager : Node, IService
 		if (senderConnection is null)
 			return;
 
-		PacketHandlersManager.ProcessRawPacket(reader, senderConnection);
+		PacketHandlersManager.ProcessRawPacket(reader, _networkTick, senderConnection);
 	}
 
 	private void HandleNetworkConnectionRequested(ConnectionRequest request)
@@ -356,8 +356,7 @@ public partial class NetworkManager : Node, IService
 		_netManager.Start(_serverPort);
 
 		Core.World.ChangeMapTo(Core.Resources.MapPrefabs.DevEnvMap);
-		uint kableConnectionId = Core.GenerateRawKableId();
-		MyConnectionId = new KableConnectionId(1);
+        MyConnectionId = KableConnectionId.Server;
 		GD.Print($"Server KableConnectionId: {MyConnectionId}");
 
 		Core.Resources.LoadingScreenHandle.Visible = false;

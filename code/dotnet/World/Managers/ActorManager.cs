@@ -46,13 +46,17 @@ public partial class ActorManager : Node, IService
     {
         return (IActor?)_spawnedActors.FirstOrDefault(x => x.Key == kableId).Value;
     }
+    public IActor? GetActor(uint rawKableId)
+    {
+        return (IActor?)_spawnedActors.FirstOrDefault(x => x.Key.Id == rawKableId).Value;
+    }
 
     public bool CheckActorExists(KableId kableId)
     {
         return _spawnedActors.ContainsKey(kableId);
     }
 
-    public Node? SpawnActorPrefab(PackedScene? prefab, KableId? presetKableId = null)
+    public Node? SpawnActorPrefab(PackedScene? prefab, uint tick, KableId? presetKableId = null)
     {
         if (!(prefab?.CanInstantiate()).GetValueOrDefault(false))
             return null;
@@ -78,12 +82,16 @@ public partial class ActorManager : Node, IService
 
         actor.KableSetup(presetKableId);
         actor.SetKableAuthority(Core.Network.GetServerConnectionId());
+        actor.Spawned(tick);
+        actor.Setup(tick);
 
         AddChild(spawned);
 
         if (_spawnedActors.TryAdd(presetKableId, actor))
             GD.Print($"Spawned actor: {presetKableId}");
 
+        actor.Start(tick);
+        
         return spawned;
     }
 }

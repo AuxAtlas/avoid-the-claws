@@ -7,7 +7,7 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
 
-public class DestroyObjectPacket : IGamePacket
+public record DestroyObjectPacket : IGamePacket
 {
     public KableId TargetObjectId { get; set; }
 

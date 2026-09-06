@@ -59,6 +59,7 @@ public enum ActionName
     AttackSecondary,
     AbilityPrimary,
     AbilitySecondary,
+    Pause,
 }
 
 public static class ActionNamesExtensions
@@ -75,6 +76,7 @@ public static class ActionNamesExtensions
         ActionName.AttackSecondary => "attack_secondary",
         ActionName.AbilityPrimary => "ability_primary",
         ActionName.AbilitySecondary => "ability_secondary",
+        ActionName.Pause => "pause_game",
         
         _ => throw new NotImplementedException()
     };

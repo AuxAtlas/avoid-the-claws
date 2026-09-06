@@ -4,7 +4,7 @@ using Godot;
 
 #endregion
 
-namespace AvoidClaws.code.dotnet.Screens.Screens;
+namespace AvoidClaws.code.dotnet.Screens.Screens.Menu;
 
 public partial class JoinGameMenuScreen : BasicMenuScreen
 {

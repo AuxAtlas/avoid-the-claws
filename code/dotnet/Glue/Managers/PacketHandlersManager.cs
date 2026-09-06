@@ -58,7 +58,7 @@ public class PacketHandlersManager
         }
     }
 
-    internal void ProcessRawPacket(NetPacketReader reader, KableConnection source)
+    internal void ProcessRawPacket(NetPacketReader reader, uint tick, KableConnection source)
     {
         var hash = reader.GetULong();
         if (!_registeredHandlers.TryGetValue(hash, out var handler))
@@ -67,7 +67,7 @@ public class PacketHandlersManager
             return;
         }
 
-        handler.ProcessPacket(reader, source);
+        handler.ProcessPacket(reader, tick, source);
     }
 
     internal void SerializePacket(NetDataWriter writer, IGamePacket packet)

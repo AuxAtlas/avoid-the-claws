@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Data.State;
@@ -23,7 +24,8 @@ public partial class BlankController : Node, IController, ILifecycleObject
     [Inject]
     public CoreGame Core { get; } = null!;
 
-    private List<IActor> _attachedActors = new();
+    private readonly List<IActor> _attachedActors = new();
+    private readonly List<uint> _reusableUIntList = new();
 
     public KableId KableId { get; private set; }
     public KableConnectionId AuthorityConnectionId { get; private set; }
@@ -50,11 +52,6 @@ public partial class BlankController : Node, IController, ILifecycleObject
         SpawnedOnTick = spawnedTick;
     }
 
-    public virtual void Setup(uint tick) { }
-    public virtual void Start(uint tick) { }
-    public virtual void Stop(uint tick) { }
-    public virtual void Teardown(uint tick) { }
-
 
     public void KableSetup(KableId kableId)
     {
@@ -79,6 +76,12 @@ public partial class BlankController : Node, IController, ILifecycleObject
         _stateCache.Put(Inputs.AttackInputsPacked);
         _stateCache.Put(Inputs.ActionInputsPacked);
 
+        _stateCache.Put((uint)_attachedActors.Count);
+        foreach (IActor actor in _attachedActors)
+        {
+            _stateCache.Put(actor.KableId.Id);
+        }
+
         return _stateCache;
     }
 
@@ -90,6 +93,38 @@ public partial class BlankController : Node, IController, ILifecycleObject
         Inputs.LookInput = state.ReadVector2();
         Inputs.AttackInputsPacked = state.ReadByte();
         Inputs.ActionInputsPacked = state.ReadByte();
+        
+        _reusableUIntList.Clear();
+        uint attachedCount = state.ReadUInt();
+        for (int i = 0; i < attachedCount; i++)
+        {
+            _reusableUIntList.Add(state.ReadUInt());
+        }
+        
+        HashCode stateHash = new();
+        HashCode currentHash = new();
+
+        foreach (uint stateActorId in _reusableUIntList)
+        {
+            stateHash.Add(stateActorId);
+        }
+
+        foreach (IActor attachedActor in _attachedActors)
+        {
+            currentHash.Add(attachedActor.KableId.Id);
+        }
+
+        if (stateHash.ToHashCode() != currentHash.ToHashCode())
+        {
+            _attachedActors.Clear();
+            foreach (uint actorToAttachId in _reusableUIntList)
+            {
+                IActor? foundActor = Core.World.Actors.GetActor(actorToAttachId);
+                if (foundActor != null)
+                    _attachedActors.Add(foundActor);
+            }
+        }
+        
     }
 
     public void IngestNetworkState(in ObjectState state)
@@ -135,12 +170,14 @@ public partial class BlankController : Node, IController, ILifecycleObject
         }
     }
 
-    public void Attach(IActor actor)
+    public virtual void Attach(IActor actor)
     {
+        _attachedActors.Add(actor);
     }
 
-    public void Detach(IActor actor)
+    public virtual void Detach(IActor actor)
     {
+        _attachedActors.Remove(actor);
     }
 
     public IReadOnlyList<IActor>? GetAttachments()
@@ -148,6 +185,17 @@ public partial class BlankController : Node, IController, ILifecycleObject
         return _attachedActors.AsReadOnly();
     }
 
+
+    protected void SetInputs(ControllerInputs inputs)
+    {
+        Inputs = inputs;
+    }
+
+    protected ref readonly ControllerInputs GetInputs()
+    {
+        return ref Inputs;
+    }
+    
     public bool IsLogicAuthority()
     {
         return AuthorityConnectionId == Core.Network.MyConnectionId;
@@ -171,22 +219,13 @@ public partial class BlankController : Node, IController, ILifecycleObject
 
 #region EMPTY VIRTUAL METHODS
     protected virtual void KableSetupCustom(KableId kableId) { }
-    protected virtual void HandleNetTickCustom(uint tick)
-    {
-    }
-    protected virtual void GetDebugStringCustom(ref StringBuilder stringBuilder)
-    {
-    }
+    protected virtual void HandleNetTickCustom(uint tick) { }
+    protected virtual void GetDebugStringCustom(ref StringBuilder stringBuilder) { }
 
-    protected void SetInputs(ControllerInputs inputs)
-    {
-        Inputs = inputs;
-    }
-
-    protected ref readonly ControllerInputs GetInputs()
-    {
-        return ref Inputs;
-    }
+    public virtual void Setup(uint tick) { }
+    public virtual void Start(uint tick) { }
+    public virtual void Stop(uint tick) { }
+    public virtual void Teardown(uint tick) { }
 
 #endregion
 }

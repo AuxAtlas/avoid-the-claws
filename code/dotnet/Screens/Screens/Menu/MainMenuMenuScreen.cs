@@ -1,11 +1,10 @@
 #region
 
-using AvoidClaws.code.dotnet.Data;
 using Godot;
 
 #endregion
 
-namespace AvoidClaws.code.dotnet.Screens.Screens;
+namespace AvoidClaws.code.dotnet.Screens.Screens.Menu;
 
 public partial class MainMenuMenuScreen : BasicMenuScreen
 {

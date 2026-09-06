@@ -4,7 +4,7 @@ namespace AvoidClaws.code.dotnet.Actors.Content;
 
 public partial class PlayerActor : LivingActor
 {
-    protected override void ProcessInputCustom(float deltaTimeF)
+    protected override void ProcessInputCustom(uint processingTick)
     {
         
     }

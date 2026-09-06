@@ -11,7 +11,7 @@ namespace AvoidClaws.code.dotnet.Networking.Handlers.Objects;
 
 public class SpawnActorPacketHandler : PacketHandler<SpawnActorPacket>
 {
-    protected override void Handle(SpawnActorPacket packet, KableConnection source)
+    protected override void Handle(SpawnActorPacket packet, uint tick, KableConnection source)
     {
         if (IsServer)
             return;
@@ -30,6 +30,6 @@ public class SpawnActorPacketHandler : PacketHandler<SpawnActorPacket>
                 break;
         }
 
-        Core.World.Actors.SpawnActorPrefab(targetPrefab, packet.ActorId);
+        Core.World.Actors.SpawnActorPrefab(targetPrefab, tick, packet.ActorId);
     }
 }

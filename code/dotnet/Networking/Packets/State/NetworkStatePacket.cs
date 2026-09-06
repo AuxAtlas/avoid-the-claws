@@ -7,7 +7,7 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.State;
 
-public class NetworkStatePacket : IGamePacket
+public record NetworkStatePacket : IGamePacket
 {
     public NetworkState State { get; set; }
 

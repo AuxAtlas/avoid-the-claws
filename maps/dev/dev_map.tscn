@@ -1,46 +1,36 @@
 [gd_scene format=3 uid="uid://dmqhwojnm4w4a"]
 
-[ext_resource type="Script" uid="uid://c3rq1l2r8svty" path="res://code/dotnet/Components/Core/DeathboxComponent.cs" id="1_fov0a"]
 [ext_resource type="Texture2D" uid="uid://dddidj68pk7u2" path="res://assets/textures/noise/grass_noise_texture_seamless.tres" id="1_pqav6"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_fov0a"]
-size = Vector3(200, 1, 200)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fov0a"]
-albedo_texture = ExtResource("1_pqav6")
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_dolmw"]
-material = SubResource("StandardMaterial3D_fov0a")
-size = Vector2(200, 200)
-
-[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_dolmw"]
+[ext_resource type="PackedScene" uid="uid://b265vdanl31ap" path="res://prefabs/objects/dev/tests/simple_red_ball_rigidbody3d.tscn" id="3_3hcc3"]
 
 [sub_resource type="Environment" id="Environment_fov0a"]
 ambient_light_source = 2
 ambient_light_color = Color(1, 1, 1, 1)
 ambient_light_energy = 4.0
 
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_pqav6"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fov0a"]
+albedo_texture = ExtResource("1_pqav6")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_dolmw"]
+material = SubResource("StandardMaterial3D_fov0a")
+size = Vector2(1000, 1000)
+
 [node name="DevMap" type="Node3D" unique_id=1724382040]
-
-[node name="DevMapFloor" type="RigidBody3D" parent="." unique_id=226879083]
-freeze = true
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="DevMapFloor" unique_id=2094130144]
-shape = SubResource("BoxShape3D_fov0a")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="DevMapFloor" unique_id=1365979205]
-mesh = SubResource("PlaneMesh_dolmw")
-
-[node name="DeathboxZone" type="Area3D" parent="." unique_id=930444311]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathboxZone" unique_id=1603441389]
-shape = SubResource("WorldBoundaryShape3D_dolmw")
-
-[node name="DeathboxComponent" type="Node3D" parent="DeathboxZone" unique_id=510600209]
-script = ExtResource("1_fov0a")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=503927254]
 environment = SubResource("Environment_fov0a")
 
-[connection signal="body_entered" from="DeathboxZone" to="DeathboxZone/DeathboxComponent" method="HandleObjectTouched"]
+[node name="Simple Red Ball - Rigidbody" parent="." unique_id=1794567988 instance=ExtResource("3_3hcc3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.479076, 8, 0.8798981)
+gravity_scale = 2.5
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1274940754]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=287772770]
+shape = SubResource("WorldBoundaryShape3D_pqav6")
+debug_color = Color(0, 0.6, 0.69803923, 0.79607844)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1651234809]
+mesh = SubResource("PlaneMesh_dolmw")

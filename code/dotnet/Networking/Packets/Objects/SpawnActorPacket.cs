@@ -8,7 +8,7 @@ using LiteNetLib.Utils;
 
 namespace AvoidClaws.code.dotnet.Networking.Packets.Objects;
 
-public class SpawnActorPacket : IGamePacket
+public record SpawnActorPacket : IGamePacket
 {
     public KableId ActorId { get; set; }
     public KableConnectionId AuthorityConnectionId { get; set; }

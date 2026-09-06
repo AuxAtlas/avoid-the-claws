@@ -42,21 +42,19 @@ public partial class HealthComponent : BaseComponent
     private readonly ObjectState _stateCache = new();
 
 
-    public override void SetupComponent()
+    public override void Setup(uint tick)
     {
         Revive();
     }
     
     
-    public override ObjectState GetCurrentState(uint currentTick)
+    protected override void GetCurrentStateCustom(in ObjectState state)
     {
-        _stateCache.ResetCustoms();
         _stateCache.Put(CurrentHealth);
         _stateCache.Put(MaxHealth);
         _stateCache.Put(IsDead ? (byte)1 : (byte)0);
-        return _stateCache;
     }
-    public override void SetCurrentState(in ObjectState state)
+    protected override void SetCurrentStateCustom(in ObjectState state)
     {
         var oldHealth = CurrentHealth;
         CurrentHealth = state.ReadFloat();
