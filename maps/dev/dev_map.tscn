@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dmqhwojnm4w4a"]
 
 [ext_resource type="Texture2D" uid="uid://dddidj68pk7u2" path="res://assets/textures/noise/grass_noise_texture_seamless.tres" id="1_pqav6"]
+[ext_resource type="Shader" uid="uid://oyovjcahjl8m" path="res://assets/shaders/terrain/terrain_displacer.gdshader" id="2_pqav6"]
 [ext_resource type="PackedScene" uid="uid://b265vdanl31ap" path="res://prefabs/objects/dev/tests/simple_red_ball_rigidbody3d.tscn" id="3_3hcc3"]
 
 [sub_resource type="Environment" id="Environment_fov0a"]
@@ -10,12 +11,19 @@ ambient_light_energy = 4.0
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_pqav6"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fov0a"]
-albedo_texture = ExtResource("1_pqav6")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3hcc3"]
+render_priority = 0
+shader = ExtResource("2_pqav6")
+shader_parameter/height_scale = 1.5
+shader_parameter/terrain_texture = ExtResource("1_pqav6")
+shader_parameter/light_color = Color(0, 0.29654726, 0.19871894, 1)
+shader_parameter/dark_color = Color(3.4593978e-07, 0.15597114, 0.09616595, 1)
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_dolmw"]
-material = SubResource("StandardMaterial3D_fov0a")
-size = Vector2(1000, 1000)
+material = SubResource("ShaderMaterial_3hcc3")
+size = Vector2(300, 300)
+subdivide_width = 25
+subdivide_depth = 25
 
 [node name="DevMap" type="Node3D" unique_id=1724382040]
 

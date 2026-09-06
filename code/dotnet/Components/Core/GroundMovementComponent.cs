@@ -1,5 +1,6 @@
 using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Data.State;
+using AvoidClaws.code.dotnet.Extensions;
 using AvoidClaws.code.dotnet.Glue.Managers;
 using Godot;
 
@@ -16,6 +17,9 @@ public partial class GroundMovementComponent : BaseComponent
     
     [Export]
     private float _acceleration = 6f;
+
+    [Export]
+    private float _jumpForce = 7f;
 
 #endregion
 
@@ -46,7 +50,14 @@ public partial class GroundMovementComponent : BaseComponent
             vel.Z = Mathf.Lerp(vel.Z, moveDirection.Z * _speed,_acceleration * NetworkManager.TickDeltaTimeF);
         }
 
-        if (!_livingParentActor.IsOnFloor())
+        if (_livingParentActor.IsOnFloor())
+        {
+            if (inputs.ActionInputsPacked.GetBit(0) && !Mathf.IsZeroApprox(_jumpForce))
+            {
+                vel.Y += _jumpForce;
+            }
+        }
+        else
         {
             vel.Y += _livingParentActor.GetGravity().Y * NetworkManager.TickDeltaTimeF;
         }

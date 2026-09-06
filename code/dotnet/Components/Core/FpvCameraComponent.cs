@@ -17,6 +17,9 @@ public partial class FpvCameraComponent : BaseComponent
     [Export(PropertyHint.Range, "0,90,5")]
     private float _maxPitch = 85;
     
+    [Export]
+    public Camera3D? TargetCamera { get; set; }
+    
 #endregion
 
     private LivingActor? _livingParentActor;
@@ -34,16 +37,16 @@ public partial class FpvCameraComponent : BaseComponent
     {
         base.HandleNetTick(tick);
         
-        if (_livingParentActor?.FpvCamera == null)
+        if (_livingParentActor == null || TargetCamera == null)
             return;
         
-        _cameraRotBuffer.Y = Mathf.Clamp(_cameraRotBuffer.Y,  _minPitch, _maxPitch);
-        Vector3 camRot = _livingParentActor.FpvCamera.Rotation;
+        _cameraRotBuffer.X = Mathf.Clamp(_cameraRotBuffer.X,  Mathf.DegToRad(_minPitch), Mathf.DegToRad(_maxPitch));
+        Vector3 camRot = TargetCamera.Rotation;
         Vector3 actorRot = _livingParentActor.Rotation;
         camRot.X = _cameraRotBuffer.X;
         actorRot.Y = _cameraRotBuffer.Y;
         
-        _livingParentActor.FpvCamera.Rotation = camRot;
+        TargetCamera.Rotation = camRot;
         _livingParentActor.Rotation = actorRot;
     }
 
