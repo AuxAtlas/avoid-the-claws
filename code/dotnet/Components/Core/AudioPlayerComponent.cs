@@ -24,9 +24,18 @@ public partial class AudioPlayerComponent : BaseComponent
 
     private AudioStreamPlayer3D? _audioPlayer;
 
-    public override void Setup(uint tick)
+    public override void Start(uint tick)
     {
-        _audioPlayer?.Stop();
+        base.Start(tick);
+
+        _audioPlayer?.StreamPaused = false;
+    }
+
+    public override void Stop(uint tick)
+    {
+        base.Stop(tick);
+        
+        _audioPlayer?.StreamPaused = true;
     }
 
     public override string[] _GetConfigurationWarnings()

@@ -63,13 +63,14 @@ public partial class LivingActor : CharacterBody3D, IActor
 	protected ControllerInputs Inputs;
 
 	protected readonly Dictionary<KableId, IComponent> Components = new();
-	protected readonly List<IBuff> Buffs = new();
+	protected readonly List<IBuff> AppliedBuffs = new();
 
 	public KableId KableId { get; private set; } = null!;
 
 	public KableConnectionId AuthorityConnectionId { get; protected set; } = null!;
 	public uint SpawnedOnTick { get; private set; }
 	public bool ReconciliationMode { get; private set; }
+	public bool IsProcessing { get; private set; }
 
 	protected HealthComponent? HealthComponent;
 
@@ -83,7 +84,7 @@ public partial class LivingActor : CharacterBody3D, IActor
 	private readonly List<ObjectState> _reusableComponentStatesList = new();
 
 	#endregion
-
+	
 	public void Spawned(uint spawnedTick)
 	{
 		SpawnedOnTick = spawnedTick;
@@ -95,16 +96,15 @@ public partial class LivingActor : CharacterBody3D, IActor
 	}
 
 
-	public virtual void Setup(uint tick)
-	{
-		// ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-		if(ComponentContainer == null)
-			GD.PushError($"ComponentContainer is null on LivingActor with KableId '${KableId}'");
-	}
-
-
 	public virtual void Start(uint tick)
 	{
+		IsProcessing = true;
+		
+		if(ComponentContainer == null)
+        {
+            throw new InvalidOperationException("ComponentContainer is null");
+        }
+		
 		Components.Clear();
 		foreach (var child in ComponentContainer.GetChildren())
 		{
@@ -118,16 +118,27 @@ public partial class LivingActor : CharacterBody3D, IActor
 
 		foreach (IComponent component in Components.Values)
 		{
-			component.Setup(tick);
 			component.Start(tick);
+		}
+
+		foreach (IBuff buff in AppliedBuffs)
+		{
+			buff.Start(tick);
 		}
 	}
 
 	public virtual void Stop(uint tick)
 	{
+		IsProcessing = false;
+		
 		foreach (IComponent component in Components.Values)
 		{
 			component.Stop(tick);
+		}
+
+		foreach (IBuff buff in AppliedBuffs)
+		{
+			buff.Stop(tick);
 		}
 	}
 
@@ -136,6 +147,11 @@ public partial class LivingActor : CharacterBody3D, IActor
 		foreach (IComponent component in Components.Values)
 		{
 			component.Teardown(tick);
+		}
+
+		foreach (IBuff buff in AppliedBuffs)
+		{
+			buff.Teardown(tick);
 		}
 	}
 
@@ -231,8 +247,9 @@ public partial class LivingActor : CharacterBody3D, IActor
 	{
 		if (Destroyed || !Core.Network.FinishedInitialSync)
 			return;
-
-		// EditorDescription = GetDebugString();
+		
+		if(OS.HasFeature("debug"))
+			EditorDescription = GetDebugString();
 
 		
 		foreach (IComponent component in Components.Values)
@@ -263,19 +280,38 @@ public partial class LivingActor : CharacterBody3D, IActor
 	}
 
 
-	public void ApplyBuff(IBuff buff)
+	public void ApplyBuff(IBuff buff, uint tick)
 	{
-		throw new NotImplementedException();
+		if (AppliedBuffs.Contains(buff))
+		{
+			Core.LogDebug($"Attempted to apply same buff(${buff.KableId}) more than once to ActorId: ${KableId}");
+			return;
+		}
+
+		if (buff is not Node node)
+			return;
+
+		BuffsContainer.AddChild(node);
+		AppliedBuffs.Add(buff);
+		buff.OnAttachedHandler(this, tick);
+		buff.Start(tick);
 	}
 
-	public void RemoveBuff(IBuff buff)
+	public void RemoveBuff(IBuff buff, uint tick)
 	{
-		throw new NotImplementedException();
+		buff.OnDetachedHandler(tick);
+		buff.Stop(tick);
+		
+		if (AppliedBuffs.Remove(buff) && buff is Node node)
+		{
+			BuffsContainer.RemoveChild(node);
+			node.QueueFree();
+		}
 	}
 
 	public IEnumerable<IBuff> GetBuffs()
 	{
-		return Buffs.AsEnumerable();
+		return AppliedBuffs.AsEnumerable();
 	}
 
 	public ObjectState GetCurrentState(uint currentTick)

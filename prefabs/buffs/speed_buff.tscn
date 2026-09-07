@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://yfhwwvawvidv"]
+
+[ext_resource type="Script" uid="uid://c7u13s6ysb851" path="res://code/dotnet/Buffs/Content/SpeedBuff.cs" id="1_jlanw"]
+
+[node name="SpeedBuff" type="Node" unique_id=2145865877]
+script = ExtResource("1_jlanw")

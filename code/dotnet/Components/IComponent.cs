@@ -9,7 +9,7 @@ using AvoidClaws.code.dotnet.Glue.interfaces;
 
 namespace AvoidClaws.code.dotnet.Components;
 
-public interface IComponent : IGameObject, IStateObject, ILifecycleObject
+public interface IComponent : IGameObject
 {
     public IActor? ParentActor { get; }
 

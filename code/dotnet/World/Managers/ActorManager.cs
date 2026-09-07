@@ -7,6 +7,7 @@ using AvoidClaws.code.dotnet.Actors;
 using AvoidClaws.code.dotnet.Events.Lifecycle;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
+using AvoidClaws.code.dotnet.Util.Exceptions;
 using Godot;
 
 #endregion
@@ -18,19 +19,19 @@ public partial class ActorManager : Node, IService
     [Inject]
     protected CoreGame Core { get; } = null!;
 
+    [Export]
+    private Node _actorsRoot = null!;
+
     private readonly Dictionary<KableId, IActor> _spawnedActors = new();
     public ReadOnlyCollection<IActor> SpawnedActors => _spawnedActors.Values.ToList().AsReadOnly();
+
+    private readonly ActorSpawnedEvent _actorSpawnedEventReusable = new();
 
     internal void HandleIncomingActor(IActor actor)
     {
         _spawnedActors.TryAdd(actor.KableId, actor);
-        Core.EventBus.Publish
-        (
-            new ActorSpawnedEvent
-            {
-                Actor = actor
-            }
-        );
+        _actorSpawnedEventReusable.Actor = actor;
+        Core.EventBus.Publish(_actorSpawnedEventReusable);
     }
 
     internal void HandleOutgoingActor(IActor actor, uint tick)
@@ -42,21 +43,26 @@ public partial class ActorManager : Node, IService
         _spawnedActors.Remove(actor.KableId);
     }
 
-    public IActor? GetActor(KableId kableId)
+    public IActor? GetById(KableId kableId)
     {
         return (IActor?)_spawnedActors.FirstOrDefault(x => x.Key == kableId).Value;
     }
-    public IActor? GetActor(uint rawKableId)
+    public IActor? GetById(uint rawKableId)
     {
         return (IActor?)_spawnedActors.FirstOrDefault(x => x.Key.Id == rawKableId).Value;
     }
 
-    public bool CheckActorExists(KableId kableId)
+    public bool CheckExists(KableId kableId)
     {
-        return _spawnedActors.ContainsKey(kableId);
+        return CheckExists(kableId.Id);
     }
 
-    public Node? SpawnActorPrefab(PackedScene? prefab, uint tick, KableId? presetKableId = null)
+    public bool CheckExists(uint rawKableId)
+    {
+        return _spawnedActors.Any(x => x.Key.Id == rawKableId);
+    }
+
+    public IActor SpawnPrefab(PackedScene? prefab, uint tick, KableId? presetKableId = null)
     {
         if (!(prefab?.CanInstantiate()).GetValueOrDefault(false))
             return null;
@@ -64,34 +70,27 @@ public partial class ActorManager : Node, IService
         if (presetKableId?.Id < 1)
             presetKableId = null;
 
-        presetKableId ??= Core.GenerateKableId();
+        presetKableId ??= Core.GenerateUniqueKableId();
 
-        if (Core.World.GetGameObject(presetKableId) != null)
-        {
-            GD.PrintErr("Level: Tried to spawn multiple KableObject with the same KableId!");
-            return null;
-        }
-
-        var spawned = prefab?.Instantiate();
+        Node? spawned = prefab?.Instantiate();
 
         if (spawned is not IActor actor)
         {
             spawned?.QueueFree();
-            return spawned;
+            throw new InvalidPrefabException("Tried to instantiate a non-actor prefab as an IActor");
         }
 
         actor.KableSetup(presetKableId);
         actor.SetKableAuthority(Core.Network.GetServerConnectionId());
         actor.Spawned(tick);
-        actor.Setup(tick);
 
-        AddChild(spawned);
+        _actorsRoot.AddChild(spawned);
 
         if (_spawnedActors.TryAdd(presetKableId, actor))
             GD.Print($"Spawned actor: {presetKableId}");
 
         actor.Start(tick);
         
-        return spawned;
+        return actor;
     }
 }

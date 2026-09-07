@@ -21,33 +21,24 @@ public partial class FpvCameraComponent : BaseComponent
     public Camera3D? TargetCamera { get; set; }
     
 #endregion
-
-    private LivingActor? _livingParentActor;
     private Vector2 _cameraRotBuffer;
     
-    
-    public override void Start(uint tick)
-    {
-        base.Setup(tick);
-        if (ParentActor is LivingActor livingActor)
-            _livingParentActor = livingActor;
-    }
 
     public override void HandleNetTick(uint tick)
     {
         base.HandleNetTick(tick);
         
-        if (_livingParentActor == null || TargetCamera == null)
+        if (LivingParentActor == null || TargetCamera == null)
             return;
         
         _cameraRotBuffer.X = Mathf.Clamp(_cameraRotBuffer.X,  Mathf.DegToRad(_minPitch), Mathf.DegToRad(_maxPitch));
         Vector3 camRot = TargetCamera.Rotation;
-        Vector3 actorRot = _livingParentActor.Rotation;
+        Vector3 actorRot = LivingParentActor.Rotation;
         camRot.X = _cameraRotBuffer.X;
         actorRot.Y = _cameraRotBuffer.Y;
         
         TargetCamera.Rotation = camRot;
-        _livingParentActor.Rotation = actorRot;
+        LivingParentActor.Rotation = actorRot;
     }
 
     public override void _UnhandledInput(InputEvent @event)

@@ -2,19 +2,15 @@ namespace AvoidClaws.code.dotnet.Glue.interfaces;
 
 public interface ILifecycleObject
 {
+    public bool IsProcessing { get; }
     /// <summary>
-    ///     Notify object of what tick it was spawned on
+    ///     Object is spawned but not in scene tree yet. Do not begin processing or accessing anything external.
     /// </summary>
     /// <param name="spawnedTick"></param>
     public void Spawned(uint spawnedTick);
-
-    /// <summary>
-    ///     Handle object initialization only. Do not access any non-service objects yet.
-    /// </summary>
-    public void Setup(uint tick);
     
     /// <summary>
-    ///     Object is now properly registered into the game world. Access to non-service objects is now safe.
+    ///     Object is now properly registered into the game world. Access to non-service objects is now safe. 'Unpaused', if relevant.
     /// </summary>
     public void Start(uint tick);
 

@@ -23,13 +23,13 @@ public class SpawnActorPacketHandler : PacketHandler<SpawnActorPacket>
             return;
 
         PackedScene? targetPrefab = null;
-        switch (packet.Type)
+        switch (packet.TypesEnum)
         {
-            case CoreGame.ActorType.Player:
+            case CoreGame.ActorTypesEnum.Player:
                 targetPrefab = Core.Resources.ActorPrefabs.PlayerActorPrefab;
                 break;
         }
 
-        Core.World.Actors.SpawnActorPrefab(targetPrefab, tick, packet.ActorId);
+        Core.World.Actors.SpawnPrefab(targetPrefab, tick, packet.ActorId);
     }
 }

@@ -20,21 +20,18 @@ public partial class CoreGame : Node, IService
 {
 #region ENUMS
 
-	public enum ActorType : ushort
+	public enum ActorTypesEnum : ushort
 	{
 		Player,
-
-		HealthPickup,
-		SpeedPickup
 	}
 
-	public enum ControllerType : ushort
+	public enum ControllerTypesEnum : ushort
 	{
 		Dummy = 1,
 		LocalPlayer = 2
 	}
 
-	public enum BuffType : ushort
+	public enum BuffTypesEnum : ushort
 	{
 		Speed
 	}
@@ -92,10 +89,16 @@ public partial class CoreGame : Node, IService
 		Screens.DisplayMainMenuScreen();
 	}
 
-	public KableId GenerateKableId()
-	{
-		return new KableId(GenerateRawKableId());
-	}
+	public KableId GenerateUniqueKableId()
+    {
+        uint tmp = GenerateRawKableId();
+        while (World.DoesKableIdExist(tmp))
+        {
+            tmp = GenerateRawKableId();
+        }
+
+        return new KableId(tmp);
+    }
 
 	public uint GenerateRawKableId()
 	{
@@ -131,5 +134,11 @@ public partial class CoreGame : Node, IService
     public void FlushPhysics3D()
     {
         PhysicsServer3D.Singleton.Call("space_flush_queries", _rootWorld3DSpaceRid);
+    }
+
+    public void LogDebug(string message)
+    {
+        if(OS.HasFeature("debug"))
+            GD.PushError($"[Core.LogDebug] {message}");
     }
 }

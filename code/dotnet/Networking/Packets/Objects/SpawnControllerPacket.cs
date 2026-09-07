@@ -11,19 +11,19 @@ public record SpawnControllerPacket : IGamePacket
 {
     public KableId SpawnedObjectId { get; set; }
     public KableConnectionId AuthorityConnectionId { get; set; }
-    public CoreGame.ControllerType Type { get; set; }
+    public CoreGame.ControllerTypesEnum TypesEnum { get; set; }
 
     public void Serialize(NetDataWriter writer)
     {
         writer.Put(SpawnedObjectId);
         writer.Put(AuthorityConnectionId);
-        writer.Put((byte)Type);
+        writer.Put((byte)TypesEnum);
     }
 
     public void Deserialize(NetDataReader reader)
     {
         SpawnedObjectId.SetKableId(reader.GetUInt());
         AuthorityConnectionId.SetKableConnectionId(reader.GetUInt());
-        Type = (CoreGame.ControllerType)reader.GetByte();
+        TypesEnum = (CoreGame.ControllerTypesEnum)reader.GetByte();
     }
 }

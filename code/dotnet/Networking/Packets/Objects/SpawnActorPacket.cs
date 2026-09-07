@@ -12,7 +12,7 @@ public record SpawnActorPacket : IGamePacket
 {
     public KableId ActorId { get; set; }
     public KableConnectionId AuthorityConnectionId { get; set; }
-    public CoreGame.ActorType Type { get; set; }
+    public CoreGame.ActorTypesEnum TypesEnum { get; set; }
 
     public ObjectState State { get; set; } = new();
 
@@ -20,7 +20,7 @@ public record SpawnActorPacket : IGamePacket
     {
         writer.Put(ActorId);
         writer.Put(AuthorityConnectionId);
-        writer.Put((byte)Type);
+        writer.Put((byte)TypesEnum);
         writer.Put(State);
     }
 
@@ -28,7 +28,7 @@ public record SpawnActorPacket : IGamePacket
     {
         ActorId.SetKableId(reader.GetUInt());
         AuthorityConnectionId.SetKableConnectionId(reader.GetUInt());
-        Type = (CoreGame.ActorType)reader.GetByte();
+        TypesEnum = (CoreGame.ActorTypesEnum)reader.GetByte();
         State.Deserialize(reader);
     }
 }

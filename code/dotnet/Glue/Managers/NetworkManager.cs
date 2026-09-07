@@ -62,8 +62,8 @@ public partial class NetworkManager : Node, IService
 	private uint _networkTick;
 	private double _networkTimeScaler = 1d;
 
-    private readonly NetworkInitPacket _networkInitPacketReusable = new();
-    private readonly NetPlayerJoinedEvent _netPlayerJoinedEventReusable = new();
+	private readonly NetworkInitPacket _networkInitPacketReusable = new();
+	private readonly NetPlayerJoinedEvent _netPlayerJoinedEventReusable = new();
 
 	public override void _Ready()
 	{
@@ -139,8 +139,8 @@ public partial class NetworkManager : Node, IService
 		foreach (var controller in Core.World.Controllers.SpawnedControllers)
 			state.ObjectStates.Add(controller.GetCurrentState(_networkTick));
 
-        if (IsServer)
-            state.ServerKableId = MyConnectionId;
+		if (IsServer)
+			state.ServerKableId = MyConnectionId;
 
 		GetStateCustom(ref state);
 		return state;
@@ -269,21 +269,21 @@ public partial class NetworkManager : Node, IService
 	private void HandlePeerConnected(NetPeer peer)
 	{
 		GD.Print("NetworkManager: New net peer connected.");
-		var connection = new KableConnection(peer, Core.GenerateKableId());
+		var connection = new KableConnection(peer, Core.GenerateUniqueKableId());
 		peer.SetKableConnection(connection);
 
 		// Only add to list if we are the server. Otherwise, the server will send a 'NetworkInitPacket' shortly, telling us its ConnectionId.
 		if (IsServer)
 		{
 			_kablePeers.Add(connection.ConnectionId, connection);
-            _networkInitPacketReusable.AssignedConnectionId = connection.ConnectionId;
-            _networkInitPacketReusable.ServerConnectionId = GetServerConnectionId();
-            SendToClientReliableOrdered(_networkInitPacketReusable, connection);
+			_networkInitPacketReusable.AssignedConnectionId = connection.ConnectionId;
+			_networkInitPacketReusable.ServerConnectionId = GetServerConnectionId();
+			SendToClientReliableOrdered(_networkInitPacketReusable, connection);
 		}
 
-        _netPlayerJoinedEventReusable.JoinedNetTick = _networkTick;
-        _netPlayerJoinedEventReusable.KableConnectionId = connection.ConnectionId;
-        
+		_netPlayerJoinedEventReusable.JoinedNetTick = _networkTick;
+		_netPlayerJoinedEventReusable.KableConnectionId = connection.ConnectionId;
+		
 		Core.EventBus.Publish(_netPlayerJoinedEventReusable);
 	}
 
@@ -355,14 +355,14 @@ public partial class NetworkManager : Node, IService
 		IsServer = true;
 		_netManager.Start(_serverPort);
 
-		Core.World.ChangeMapTo(Core.Resources.MapPrefabs.DevEnvMap);
-        MyConnectionId = KableConnectionId.Server;
+		Core.World.ChangeMapTo(Core.Resources.LevelPrefabs.DevEnvMap);
+		MyConnectionId = KableConnectionId.Server;
 		GD.Print($"Server KableConnectionId: {MyConnectionId}");
 
 		Core.Resources.LoadingScreenHandle.Visible = false;
 
-        _netPlayerJoinedEventReusable.JoinedNetTick = _networkTick;
-        _netPlayerJoinedEventReusable.KableConnectionId = MyConnectionId;
+		_netPlayerJoinedEventReusable.JoinedNetTick = _networkTick;
+		_netPlayerJoinedEventReusable.KableConnectionId = MyConnectionId;
 		Core.EventBus.Publish(_netPlayerJoinedEventReusable);
 	}
 

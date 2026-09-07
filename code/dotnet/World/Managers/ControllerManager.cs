@@ -7,6 +7,7 @@ using AvoidClaws.code.dotnet.Controllers;
 using AvoidClaws.code.dotnet.Events.Lifecycle;
 using AvoidClaws.code.dotnet.Networking.Data;
 using AvoidClaws.code.dotnet.Services;
+using AvoidClaws.code.dotnet.Util.Exceptions;
 using Godot;
 
 #endregion
@@ -18,20 +19,20 @@ public partial class ControllerManager : Node, IService
     [Inject]
     protected CoreGame Core { get; } = null!;
 
+    [Export]
+    private Node _controllersRoot = null!;
+
     private readonly Dictionary<KableId, IController> _spawnedControllers = new();
     public ReadOnlyCollection<IController> SpawnedControllers => _spawnedControllers.Values.ToList().AsReadOnly();
+
+    private readonly ControllerSpawnedEvent _controllerSpawnedEventReusable = new();
 
     internal void HandleIncomingController(IController controller)
     {
         _spawnedControllers.TryAdd(controller.KableId, controller);
 
-        Core.EventBus.Publish
-        (
-            new ControllerSpawnedEvent
-            {
-                Controller = controller
-            }
-        );
+        _controllerSpawnedEventReusable.Controller = controller;
+        Core.EventBus.Publish (_controllerSpawnedEventReusable);
     }
 
     internal void HandleOutgoingController(IController controller, uint tick)
@@ -43,52 +44,50 @@ public partial class ControllerManager : Node, IService
         _spawnedControllers.Remove(controller.KableId);
     }
 
-    public IController? GetController(KableId kableId)
+    public IController? GetById(KableId kableId)
     {
         return (IController?)_spawnedControllers.FirstOrDefault(x => x.Key == kableId).Value;
     }
 
-    public bool CheckControllerExists(KableId kableId)
+    public bool CheckExists(KableId kableId)
     {
-        return _spawnedControllers.ContainsKey(kableId);
+        return CheckExists(kableId.Id);
     }
 
-    public Node? SpawnControllerPrefab(PackedScene? prefab, uint tick, KableId? presetKableId = null)
+    public bool CheckExists(uint rawKableId)
+    {
+        return _spawnedControllers.Any(x => x.Key.Id == rawKableId);
+    }
+
+    public IController SpawnPrefab(PackedScene? prefab, uint tick, KableId? presetKableId = null)
     {
         if (!(prefab?.CanInstantiate()).GetValueOrDefault(false))
-            return null;
+            throw new InvalidPrefabException();
 
         if (presetKableId?.Id < 1)
             presetKableId = null;
 
-        presetKableId ??= Core.GenerateKableId();
-
-        if (Core.World.GetGameObject(presetKableId) != null)
-        {
-            GD.PrintErr("Level: Tried to spawn multiple KableObject with the same KableId!");
-            return null;
-        }
+        presetKableId ??= Core.GenerateUniqueKableId();
 
         var spawned = prefab?.Instantiate();
 
         if (spawned is not IController controller)
         {
             spawned?.QueueFree();
-            return spawned;
+            throw new InvalidPrefabException("Tried to instantiate a non-controller prefab as an IController");
         }
 
         controller.KableSetup(presetKableId);
         controller.SetKableAuthority(Core.Network.GetServerConnectionId());
         controller.Spawned(tick);
-        controller.Setup(tick);
 
-        AddChild(spawned);
+        _controllersRoot.AddChild(spawned);
 
         if (_spawnedControllers.TryAdd(presetKableId, controller))
             GD.Print($"Spawned controller: {presetKableId}");
 
         controller.Start(tick);
         
-        return spawned;
+        return controller;
     }
 }

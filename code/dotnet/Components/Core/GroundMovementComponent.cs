@@ -8,7 +8,6 @@ namespace AvoidClaws.code.dotnet.Components.Core;
 
 public partial class GroundMovementComponent : BaseComponent
 {
-    private LivingActor? _livingParentActor;
 
 #region EXPORTS
 
@@ -21,23 +20,19 @@ public partial class GroundMovementComponent : BaseComponent
     [Export]
     private float _jumpForce = 7f;
 
-#endregion
+    public float BuffSpeedMultiplier = 1f;
+    public float BuffAccelerationMultiplier = 1f;
+    public float BuffJumpMultiplier = 1f;
 
-    public override void _Ready()
-    {
-        base._Ready();
-        
-        if (ParentActor is LivingActor livingActor)
-            _livingParentActor = livingActor;
-    }
+#endregion
 
     public override void ProcessInput(ControllerInputs inputs, uint tickToProcess)
     {
-        if (_livingParentActor == null)
+        if (LivingParentActor == null)
             return;
 
-        Vector3 vel = _livingParentActor.Velocity;
-        Vector3 moveDirection = (_livingParentActor.Transform.Basis * new Vector3(inputs.MoveInput.X, 0, inputs.MoveInput.Y)).Normalized();
+        Vector3 vel = LivingParentActor.Velocity;
+        Vector3 moveDirection = (LivingParentActor.Transform.Basis * new Vector3(inputs.MoveInput.X, 0, inputs.MoveInput.Y)).Normalized();
 
         if (moveDirection.IsZeroApprox())
         {
@@ -50,7 +45,7 @@ public partial class GroundMovementComponent : BaseComponent
             vel.Z = Mathf.Lerp(vel.Z, moveDirection.Z * _speed,_acceleration * NetworkManager.TickDeltaTimeF);
         }
 
-        if (_livingParentActor.IsOnFloor())
+        if (LivingParentActor.IsOnFloor())
         {
             if (inputs.ActionInputsPacked.GetBit(0) && !Mathf.IsZeroApprox(_jumpForce))
             {
@@ -59,9 +54,9 @@ public partial class GroundMovementComponent : BaseComponent
         }
         else
         {
-            vel.Y += _livingParentActor.GetGravity().Y * NetworkManager.TickDeltaTimeF;
+            vel.Y += LivingParentActor.GetGravity().Y * NetworkManager.TickDeltaTimeF;
         }
 
-        _livingParentActor.Velocity = vel;
+        LivingParentActor.Velocity = vel;
     }
 }

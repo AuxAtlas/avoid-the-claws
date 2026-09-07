@@ -25,7 +25,7 @@ public partial class HealthComponent : BaseComponent
 
     public float MaxHealth
     {
-        get => _maxHealth;
+        get => _maxHealth * BuffMaxHealthMultiplier;
         private set
         {
             _maxHealth = value;
@@ -41,13 +41,33 @@ public partial class HealthComponent : BaseComponent
 
     private readonly ObjectState _stateCache = new();
 
+    private readonly HealthUpdateInfo _healthUpdateInfoReusable = new();
 
-    public override void Setup(uint tick)
+    public float BuffMaxHealthMultiplier
     {
+        get => _buffMaxHealthMultiplier;
+        set
+        {
+            if (value < 0.01f)
+                value = 0.01f;
+            
+            if (value * _maxHealth < CurrentHealth)
+            {
+                CurrentHealth = (_maxHealth * value);
+            }
+
+            _buffMaxHealthMultiplier = value;
+        }
+    }
+    private float _buffMaxHealthMultiplier = 1f;
+
+    public override void Start(uint tick)
+    {
+        base.Start(tick);
         Revive();
     }
-    
-    
+
+
     protected override void GetCurrentStateCustom(in ObjectState state)
     {
         _stateCache.Put(CurrentHealth);
@@ -73,14 +93,11 @@ public partial class HealthComponent : BaseComponent
         }
         else if (!Mathf.IsEqualApprox(oldHealth, CurrentHealth))
         {
-            HealthUpdateInfo info = new()
-            {
-                OldHealth = oldHealth,
-                NewHealth = CurrentHealth,
-                MaxHealth = _maxHealth,
-                SuppressSoundEffect = true
-            };
-            EmitSignalHealthChanged(info);
+            _healthUpdateInfoReusable.OldHealth = oldHealth;
+            _healthUpdateInfoReusable.NewHealth = CurrentHealth;
+            _healthUpdateInfoReusable.MaxHealth = MaxHealth;
+            _healthUpdateInfoReusable.SuppressSoundEffect = true;
+            EmitSignalHealthChanged(_healthUpdateInfoReusable);
         }
     }
 
@@ -93,15 +110,14 @@ public partial class HealthComponent : BaseComponent
         if (CurrentHealth < 0)
             CurrentHealth = 0;
 
-        HealthUpdateInfo info = new()
-        {
-            OldHealth = oldHealth,
-            NewHealth = CurrentHealth,
-            MaxHealth = _maxHealth,
-            SuppressSoundEffect = suppressSoundEffect
-        };
-        EmitSignalHealthChanged(info);
-        if (!IsDead && !HasHealthRemaining) Die();
+        _healthUpdateInfoReusable.OldHealth = oldHealth;
+        _healthUpdateInfoReusable.NewHealth = CurrentHealth;
+        _healthUpdateInfoReusable.MaxHealth = MaxHealth;
+        _healthUpdateInfoReusable.SuppressSoundEffect = suppressSoundEffect;
+        EmitSignalHealthChanged(_healthUpdateInfoReusable);
+        
+        if (!IsDead && !HasHealthRemaining)
+            Die();
     }
 
     public void TakeHeal(float amount, bool suppressSoundEffect = false)
@@ -110,19 +126,17 @@ public partial class HealthComponent : BaseComponent
         if (amount > 0f)
             CurrentHealth += amount;
 
-        if (CurrentHealth > _maxHealth)
-            CurrentHealth = _maxHealth;
+        if (CurrentHealth > MaxHealth)
+            CurrentHealth = MaxHealth;
+        _healthUpdateInfoReusable.OldHealth = oldHealth;
+        _healthUpdateInfoReusable.NewHealth = CurrentHealth;
+        _healthUpdateInfoReusable.MaxHealth = MaxHealth;
+        _healthUpdateInfoReusable.SuppressSoundEffect = suppressSoundEffect;
 
-        HealthUpdateInfo info = new()
-        {
-            OldHealth = oldHealth,
-            NewHealth = CurrentHealth,
-            MaxHealth = _maxHealth,
-            SuppressSoundEffect = suppressSoundEffect
-        };
-
-        EmitSignalHealthChanged(info);
-        if (!IsDead && !HasHealthRemaining) Die();
+        EmitSignalHealthChanged(_healthUpdateInfoReusable);
+        
+        if (!IsDead && !HasHealthRemaining)
+            Die();
     }
 
     public void Die()
@@ -131,15 +145,12 @@ public partial class HealthComponent : BaseComponent
             return;
 
         IsDead = true;
+        _healthUpdateInfoReusable.OldHealth = 0f;
+        _healthUpdateInfoReusable.NewHealth = 0f;
+        _healthUpdateInfoReusable.MaxHealth = MaxHealth;
+        _healthUpdateInfoReusable.SuppressSoundEffect = true;
 
-        HealthUpdateInfo info = new()
-        {
-            OldHealth = 0f,
-            NewHealth = 0f,
-            MaxHealth = _maxHealth,
-            SuppressSoundEffect = true
-        };
-        EmitSignalHealthChanged(info);
+        EmitSignalHealthChanged(_healthUpdateInfoReusable);
 
         EmitSignalDied();
     }
@@ -149,14 +160,12 @@ public partial class HealthComponent : BaseComponent
         IsDead = false;
         CurrentHealth = MaxHealth;
 
-        HealthUpdateInfo info = new()
-        {
-            OldHealth = 0f,
-            NewHealth = CurrentHealth,
-            MaxHealth = _maxHealth,
-            SuppressSoundEffect = true
-        };
-        EmitSignalHealthChanged(info);
+        _healthUpdateInfoReusable.OldHealth = 0f;
+        _healthUpdateInfoReusable.NewHealth = CurrentHealth;
+        _healthUpdateInfoReusable.MaxHealth = MaxHealth;
+        _healthUpdateInfoReusable.SuppressSoundEffect = true;
+        
+        EmitSignalHealthChanged(_healthUpdateInfoReusable);
 
         EmitSignalRevived();
     }

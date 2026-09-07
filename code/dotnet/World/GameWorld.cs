@@ -28,6 +28,9 @@ public partial class GameWorld : Node, IService
     public ControllerManager Controllers { get; private set; } = null!;
 
     [Export]
+    public BuffManager Buffs { get; private set; } = null!;
+
+    [Export]
     public Node3D LevelRoot { get; private set; } = null!;
 
     [Inject]
@@ -64,15 +67,15 @@ public partial class GameWorld : Node, IService
 
     public void DestroyObject(KableId kableId)
     {
-        if (!CheckObjectExists(kableId))
+        if (!DoesKableIdExist(kableId))
             return;
 
         IGameObject? target = null;
 
-        target = Actors.GetActor(kableId);
+        target = Actors.GetById(kableId);
 
         if (target == null)
-            target = Controllers.GetController(kableId);
+            target = Controllers.GetById(kableId);
 
         if (target == null)
         {
@@ -96,8 +99,8 @@ public partial class GameWorld : Node, IService
     {
         var found = default(T);
 
-        found ??= (T?)Actors.GetActor(kableId);
-        found ??= (T?)Controllers.GetController(kableId);
+        found ??= (T?)Actors.GetById(kableId);
+        found ??= (T?)Controllers.GetById(kableId);
 
         return found;
     }
@@ -107,9 +110,13 @@ public partial class GameWorld : Node, IService
         return GetGameObject<IGameObject>(kableId);
     }
 
-    public bool CheckObjectExists(KableId kableId)
+    public bool DoesKableIdExist(KableId kableId)
     {
-        return Actors.CheckActorExists(kableId) || Controllers.CheckControllerExists(kableId);
+        return DoesKableIdExist(kableId.Id);
+    }
+    public bool DoesKableIdExist(uint rawKableId)
+    {
+        return Actors.CheckExists(rawKableId) || Controllers.CheckExists(rawKableId) || Buffs.CheckExists(rawKableId);
     }
 
 
@@ -122,7 +129,7 @@ public partial class GameWorld : Node, IService
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (gameObject.KableId == null || !gameObject.KableId.IsValid)
-            gameObject.KableSetup(Core.GenerateKableId());
+            gameObject.KableSetup(Core.GenerateUniqueKableId());
 
         switch (node)
         {

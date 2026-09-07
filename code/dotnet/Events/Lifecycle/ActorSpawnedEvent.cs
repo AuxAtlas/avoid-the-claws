@@ -8,5 +8,5 @@ namespace AvoidClaws.code.dotnet.Events.Lifecycle;
 
 public record ActorSpawnedEvent : GameEvent
 {
-    public required IActor? Actor { get; init; }
+    public IActor? Actor { get; set; }
 }

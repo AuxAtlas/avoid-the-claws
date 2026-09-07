@@ -23,9 +23,9 @@ public class SpawnControllerPacketHandler : PacketHandler<SpawnControllerPacket>
             return;
 
         PackedScene? targetPrefab;
-        switch (packet.Type)
+        switch (packet.TypesEnum)
         {
-            case CoreGame.ControllerType.LocalPlayer:
+            case CoreGame.ControllerTypesEnum.LocalPlayer:
                 targetPrefab = Core.Resources.ControllerPrefabs.PlayerControllerPrefab;
                 break;
             default:
@@ -33,6 +33,6 @@ public class SpawnControllerPacketHandler : PacketHandler<SpawnControllerPacket>
                 break;
         }
 
-        Core.World.Controllers.SpawnControllerPrefab(targetPrefab, tick, packet.SpawnedObjectId);
+        Core.World.Controllers.SpawnPrefab(targetPrefab, tick, packet.SpawnedObjectId);
     }
 }

@@ -28,8 +28,8 @@ public interface IActor : IGameObject
 
     public void SetClientFocused();
 
-    public void ApplyBuff(IBuff buff);
-    public void RemoveBuff(IBuff buff);
+    public void ApplyBuff(IBuff buff, uint tick);
+    public void RemoveBuff(IBuff buff, uint tick);
     public IEnumerable<IBuff> GetBuffs();
     public void Destroy(IKableObject? source);
 

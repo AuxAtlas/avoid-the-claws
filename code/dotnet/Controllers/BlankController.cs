@@ -19,7 +19,7 @@ namespace AvoidClaws.code.dotnet.Controllers;
 /// <summary>
 /// Controller base class with always zero'd inputs
 /// </summary>
-public partial class BlankController : Node, IController, ILifecycleObject
+public partial class BlankController : Node, IController
 {
     [Inject]
     public CoreGame Core { get; } = null!;
@@ -33,9 +33,10 @@ public partial class BlankController : Node, IController, ILifecycleObject
     private byte _attackInputsPacked;
     private byte _actionInputsPacked;
     protected ObjectState[] _stateHistory = new ObjectState[NetworkManager.MaxTickSequence];
-    protected ControllerInputs Inputs;
-
-    public bool ReconciliationMode { get; private set; } = false;
+    protected ControllerInputs Inputs
+        ;
+    public bool IsProcessing { get; private set; }
+    public bool ReconciliationMode { get; private set; }
     public float TickDeltaTimeF => NetworkManager.TickDeltaTimeF;
     public bool Destroyed => IsQueuedForDeletion();
     protected bool IsClient => Core.Network.IsClient;
@@ -44,13 +45,23 @@ public partial class BlankController : Node, IController, ILifecycleObject
     private StringBuilder _debugStringBuilder = new(100);
 
     private readonly ObjectState _stateCache = new();
-    
-    
 
+    
     public void Spawned(uint spawnedTick)
     {
         SpawnedOnTick = spawnedTick;
     }
+
+    public virtual void Start(uint tick)
+    {
+        IsProcessing = true;
+    }
+
+    public virtual void Stop(uint tick)
+    {
+        IsProcessing = false;
+    }
+    
 
 
     public void KableSetup(KableId kableId)
@@ -119,7 +130,7 @@ public partial class BlankController : Node, IController, ILifecycleObject
             _attachedActors.Clear();
             foreach (uint actorToAttachId in _reusableUIntList)
             {
-                IActor? foundActor = Core.World.Actors.GetActor(actorToAttachId);
+                IActor? foundActor = Core.World.Actors.GetById(actorToAttachId);
                 if (foundActor != null)
                     _attachedActors.Add(foundActor);
             }
@@ -157,8 +168,8 @@ public partial class BlankController : Node, IController, ILifecycleObject
     {
         if (Destroyed || !Core.Network.FinishedInitialSync)
             return;
-
-        EditorDescription = GetDebugString();
+        if(OS.HasFeature("debug"))
+            EditorDescription = GetDebugString();
 
         HandleNetTickCustom(tick);
         
@@ -221,10 +232,6 @@ public partial class BlankController : Node, IController, ILifecycleObject
     protected virtual void KableSetupCustom(KableId kableId) { }
     protected virtual void HandleNetTickCustom(uint tick) { }
     protected virtual void GetDebugStringCustom(ref StringBuilder stringBuilder) { }
-
-    public virtual void Setup(uint tick) { }
-    public virtual void Start(uint tick) { }
-    public virtual void Stop(uint tick) { }
     public virtual void Teardown(uint tick) { }
 
 #endregion
